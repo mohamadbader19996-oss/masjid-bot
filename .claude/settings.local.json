@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\"; Get-ChildItem -Recurse -Exclude node_modules,\".git\" | Where-Object { -not $_.FullName.Contains\\(\"node_modules\"\\) } | Select-Object FullName | Sort-Object FullName)",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\" -Raw; $content.Length; $content[-20..-1] -join '')",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\"\\); $bytes.Length; [System.Text.Encoding]::UTF8.GetString\\($bytes[-30..-1]\\))",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\"\\); Write-Host \"Total bytes: $\\($bytes.Length\\)\"; foreach\\($b in $bytes\\) { Write-Host -NoNewline \"$\\([char]$b\\)\" }; Write-Host \"\")",
+      "PowerShell($content = [System.IO.File]::ReadAllText\\(\"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\"\\); $hasTxt = $content -match '\\\\.txt'; Write-Host \"Contains .txt: $hasTxt\"; Write-Host \"File length: $\\($content.Length\\)\")",
+      "PowerShell($content = [System.IO.File]::ReadAllText\\(\"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\"\\); $idx = $content.IndexOf\\('.txt'\\); Write-Host \"Index of .txt: $idx\"; $len = $content.Trim\\(\\).Length; Write-Host \"Trimmed length: $len\")",
+      "Skill(run)",
+      "PowerShell(Set-Content *)",
+      "PowerShell(\\(Get-Item \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\6999879071AAE....txt\"\\).Length)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\" -Raw\\).Length)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell($token = \\(Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\6999879071AAE....txt\" -Raw\\).Trim\\(\\); $env:BOT_TOKEN = $token; cd \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\"; node --use-system-ca index.js 2>&1)"
+    ]
+  }
+}

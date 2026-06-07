@@ -1,0 +1,34 @@
+{
+  "users": {
+    "6070771722": {
+      "id": 6070771722,
+      "username": "",
+      "firstName": "Mohamad",
+      "lastName": "Bader",
+      "role": "worshipper",
+      "joinedAt": "2026-06-07T14:00:16.256Z"
+    }
+  },
+  "mosques": {
+    "1": {
+      "id": "1",
+      "name": "مسجد النور",
+      "city": "برلين",
+      "adminId": "1"
+    },
+    "mosque1": {
+      "id": "mosque1",
+      "name": "مسجد النور",
+      "city": "برلين",
+      "country": "ألمانيا",
+      "location": "برلين، ألمانيا",
+      "adminId": "123"
+    }
+  },
+  "announcements": [],
+  "lessons": [],
+  "questions": [],
+  "settings": {
+    "developerIds": []
+  }
+}
