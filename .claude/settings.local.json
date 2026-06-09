@@ -12,7 +12,9 @@
       "PowerShell(\\(Get-Item \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\6999879071AAE....txt\"\\).Length)",
       "PowerShell(\\(Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\\\\.env\" -Raw\\).Length)",
       "PowerShell(Remove-Item *)",
-      "PowerShell($token = \\(Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\6999879071AAE....txt\" -Raw\\).Trim\\(\\); $env:BOT_TOKEN = $token; cd \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\"; node --use-system-ca index.js 2>&1)"
+      "PowerShell($token = \\(Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\6999879071AAE....txt\" -Raw\\).Trim\\(\\); $env:BOT_TOKEN = $token; cd \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\"; node --use-system-ca index.js 2>&1)",
+      "Bash(node index.js)",
+      "Bash(node -e \"require\\('./src/bot.js'\\); console.log\\('OK'\\);\")"
     ]
   }
 }

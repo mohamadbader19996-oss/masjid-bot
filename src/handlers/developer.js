@@ -1,40 +1,70 @@
 const db = require('../database');
-const { ROLES, ROLE_LABELS } = require('../keyboards');
+const { ROLES } = require('../keyboards');
+
+async function ensureDeveloper(ctx) {
+  if (!ctx.from || !db.isDeveloper(ctx.from.id)) {
+    await ctx.reply('⛔ ليس لديك صلاحية الوصول إلى هذا القسم.');
+    return false;
+  }
+  return true;
+}
 
 async function showStats(ctx) {
-  if (ctx.user?.role !== ROLES.DEVELOPER) {
-    return ctx.reply('⛔ ليس لديك صلاحية للوصول إلى هذا القسم.');
-  }
+  if (!await ensureDeveloper(ctx)) return;
 
   const users = db.allUsers();
   const mosques = db.allMosques();
-  const announcements = db.getAnnouncements(1000);
-  const lessons = db.getLessons(1000);
+  const questions = db.allQuestions();
   const pending = db.pendingQuestions();
 
-  const byRole = {};
-  for (const u of users) {
-    byRole[u.role] = (byRole[u.role] || 0) + 1;
-  }
-
-  const roleOrder = [ROLES.DEVELOPER, ROLES.ADMIN, ROLES.SHEIKH, ROLES.WORSHIPPER];
-
-  let roleLines = '';
-  for (const role of roleOrder) {
-    if (byRole[role]) {
-      roleLines += `  ${ROLE_LABELS[role]}: ${byRole[role]}\n`;
-    }
-  }
+  const activeMosques = mosques.filter(m => m.active !== false).length;
+  const frozenMosques = mosques.filter(m => m.active === false).length;
 
   const msg =
-    `📊 *إحصائيات بوت المسجد*\n\n` +
-    `👥 *المستخدمون:* ${users.length}\n${roleLines}\n` +
-    `🕌 *المساجد:* ${mosques.length}\n` +
-    `📢 *الإعلانات:* ${announcements.length}\n` +
-    `📚 *الدروس:* ${lessons.length}\n` +
-    `❓ *أسئلة بانتظار إجابة:* ${pending.length}`;
+    `📊 *إحصائيات المنصة*\n\n` +
+    `👥 *المستخدمون:* ${users.length}\n` +
+    `🕌 *المساجد:* ${mosques.length} (نشط: ${activeMosques}, موقوف: ${frozenMosques})\n` +
+    `❓ *الأسئلة:* ${questions.length} (قيد الانتظار: ${pending.length})\n` +
+    `📢 *الإعلانات:* ${db.getAnnouncements(1000).length}`;
 
   await ctx.reply(msg, { parse_mode: 'Markdown' });
 }
 
-module.exports = { showStats };
+async function listMosques(ctx) {
+  if (!await ensureDeveloper(ctx)) return;
+
+  const mosques = db.allMosques();
+  if (!mosques.length) {
+    return ctx.reply('🕌 لا يوجد مساجد مسجلة حتى الآن.');
+  }
+
+  const lines = mosques.map((mosque) => {
+    const status = mosque.active === false ? 'موقوف' : 'نشط';
+    return `• *${mosque.name || 'مسجد'}* [${mosque.id}]\n  📍 ${mosque.location || 'غير محدد'}\n  الحالة: ${status}`;
+  });
+
+  await ctx.reply(`🕌 *قائمة المساجد المسجلة*\n\n${lines.join('\n\n')}`, { parse_mode: 'Markdown' });
+}
+
+async function enterToggleMosque(ctx) {
+  if (!await ensureDeveloper(ctx)) return;
+  return ctx.scene.enter('toggle-mosque');
+}
+
+async function enterDeleteMosque(ctx) {
+  if (!await ensureDeveloper(ctx)) return;
+  return ctx.scene.enter('delete-mosque');
+}
+
+async function broadcastAnnouncement(ctx) {
+  if (!await ensureDeveloper(ctx)) return;
+  return ctx.scene.enter('broadcast');
+}
+
+module.exports = {
+  showStats,
+  listMosques,
+  enterToggleMosque,
+  enterDeleteMosque,
+  broadcastAnnouncement
+};

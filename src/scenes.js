@@ -403,7 +403,7 @@ const broadcastScene = new Scenes.WizardScene(
   async (ctx) => {
     const total = db.allUsers().length;
     await ctx.reply(
-      `📡 *إرسال رسالة جماعية*\n\nإجمالي المستخدمين: ${total}\n\nأدخل نص الرسالة:`,
+      `📣 *إرسال إعلان عام للمساجد*\n\nإجمالي المستخدمين: ${total}\n\nأدخل نص الإعلان:`,
       { parse_mode: 'Markdown', ...cancelKeyboard() }
     );
     return ctx.wizard.next();
@@ -416,7 +416,7 @@ const broadcastScene = new Scenes.WizardScene(
     ctx.wizard.state.text = text;
 
     await ctx.reply(
-      `📡 *معاينة الرسالة الجماعية:*\n\n${text}\n\nهل تريد الإرسال لجميع المستخدمين؟`,
+      `📣 *معاينة الإعلان العام:*\n\n${text}\n\nهل تريد إرساله لجميع المستخدمين؟`,
       {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[
@@ -454,7 +454,7 @@ const broadcastScene = new Scenes.WizardScene(
         try {
           await ctx.telegram.sendMessage(
             user.id,
-            `📡 *رسالة من إدارة المسجد*\n\n${ctx.wizard.state.text}`,
+            `📣 *إعلان عام من إدارة المسجد*\n\n${ctx.wizard.state.text}`,
             { parse_mode: 'Markdown' }
           );
           sent++;
@@ -473,6 +473,185 @@ const broadcastScene = new Scenes.WizardScene(
   }
 );
 
+const toggleMosqueScene = new Scenes.WizardScene(
+  'toggle-mosque',
+
+  async (ctx) => {
+    await ctx.reply(
+      '❄️ *تفعيل أو تجميد مسجد*\n\nأدخل معرف المسجد:',
+      { parse_mode: 'Markdown', ...cancelKeyboard() }
+    );
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    const mosqueId = ctx.message?.text?.trim();
+    if (!mosqueId) return ctx.reply('⚠️ يرجى إدخال معرف مسجد صحيح.');
+
+    const mosque = db.getMosque(mosqueId);
+    if (!mosque) {
+      return ctx.reply(`❌ لم يتم العثور على مسجد بالمعرف ${mosqueId}.`);
+    }
+
+    ctx.wizard.state.mosqueId = mosqueId;
+    const status = mosque.active === false ? 'موقوف' : 'نشط';
+    await ctx.reply(
+      `🕌 *${mosque.name || 'مسجد'}*\n📍 ${mosque.location || 'غير محدد'}\n📌 الحالة الحالية: ${status}\n\nهل تريد تغيير الحالة؟`,
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[
+          Markup.button.callback('✅ نعم', 'toggle_confirm'),
+          Markup.button.callback('❌ لا', 'toggle_cancel')
+        ]])
+      }
+    );
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (!ctx.callbackQuery) {
+      if (isCancelled(ctx)) return leaveWithCancel(ctx);
+      return;
+    }
+
+    await ctx.answerCbQuery();
+    if (ctx.callbackQuery.data === 'toggle_cancel') {
+      await ctx.editMessageText('❌ تم إلغاء العملية.');
+      await ctx.reply('تم الإلغاء.', mainKeyboard(ctx.session.userRole));
+      return ctx.scene.leave();
+    }
+
+    const mosqueId = ctx.wizard.state.mosqueId;
+    const mosque = db.getMosque(mosqueId);
+    if (!mosque) {
+      await ctx.reply('❌ المسجد غير موجود.');
+      return ctx.scene.leave();
+    }
+
+    const updated = db.setMosqueActive(mosqueId, mosque.active === false);
+    if (!updated) {
+      await ctx.reply('❌ حدث خطأ أثناء تحديث الحالة.');
+      return ctx.scene.leave();
+    }
+
+    await ctx.editMessageText(`✅ تم تحديث حالة المسجد إلى: ${updated.active ? 'نشط' : 'موقوف'}`);
+    await ctx.reply('✅ تم حفظ التحديث بنجاح.', mainKeyboard(ctx.session.userRole));
+    return ctx.scene.leave();
+  }
+);
+
+const deleteMosqueScene = new Scenes.WizardScene(
+  'delete-mosque',
+
+  async (ctx) => {
+    await ctx.reply(
+      '🗑️ *حذف مسجد نهائياً*\n\nأدخل معرف المسجد الذي تريد حذفه:',
+      { parse_mode: 'Markdown', ...cancelKeyboard() }
+    );
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    const mosqueId = ctx.message?.text?.trim();
+    if (!mosqueId) return ctx.reply('⚠️ يرجى إدخال معرف مسجد صحيح.');
+
+    const mosque = db.getMosque(mosqueId);
+    if (!mosque) {
+      return ctx.reply(`❌ لم يتم العثور على مسجد بالمعرف ${mosqueId}.`);
+    }
+
+    ctx.wizard.state.mosqueId = mosqueId;
+    await ctx.reply(
+      `🕌 *${mosque.name || 'مسجد'}*\n📍 ${mosque.location || 'غير محدد'}\n\nهل أنت متأكد أنك تريد حذفه نهائياً؟`,
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[
+          Markup.button.callback('✅ حذف نهائي', 'delete_confirm'),
+          Markup.button.callback('❌ إلغاء', 'delete_cancel')
+        ]])
+      }
+    );
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (!ctx.callbackQuery) {
+      if (isCancelled(ctx)) return leaveWithCancel(ctx);
+      return;
+    }
+
+    await ctx.answerCbQuery();
+    if (ctx.callbackQuery.data === 'delete_cancel') {
+      await ctx.editMessageText('❌ تم إلغاء الحذف.');
+      await ctx.reply('تم الإلغاء.', mainKeyboard(ctx.session.userRole));
+      return ctx.scene.leave();
+    }
+
+    const mosqueId = ctx.wizard.state.mosqueId;
+    const deleted = db.deleteMosque(mosqueId);
+    if (!deleted) {
+      await ctx.reply('❌ حدث خطأ أثناء الحذف.');
+      return ctx.scene.leave();
+    }
+
+    await ctx.editMessageText('✅ تم حذف المسجد نهائياً.');
+    await ctx.reply('✅ تم حذف المسجد بنجاح.', mainKeyboard(ctx.session.userRole));
+    return ctx.scene.leave();
+  }
+);
+
+const addHelpRequestScene = new Scenes.WizardScene(
+  'add-help-request',
+
+  async (ctx) => {
+    await ctx.reply(
+      '🆘 *طلب مساعدة محلية*\n\nأدخل اسمك:',
+      { parse_mode: 'Markdown', ...cancelKeyboard() }
+    );
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    const name = ctx.message?.text?.trim();
+    if (!name) return ctx.reply('⚠️ يرجى إدخال اسمك.');
+    ctx.wizard.state.name = name;
+    await ctx.reply(`✅ الاسم: *${name}*\n\nأدخل رقم هاتفك (اختياري):`, { parse_mode: 'Markdown' });
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    const phone = ctx.message?.text?.trim() === 'اختياري' ? '' : ctx.message?.text?.trim();
+    ctx.wizard.state.phone = phone;
+    await ctx.reply(
+      `✅ ${ctx.wizard.state.phone ? `الهاتف: ${ctx.wizard.state.phone}` : 'بدون رقم هاتف'}\n\nصف المساعدة التي تحتاجها:`,
+      { parse_mode: 'Markdown' }
+    );
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    const description = ctx.message?.text?.trim();
+    if (!description) return ctx.reply('⚠️ يرجى وصف احتياجك.');
+
+    db.addHelpRequest({
+      name: ctx.wizard.state.name,
+      phone: ctx.wizard.state.phone || '',
+      description
+    });
+
+    await ctx.reply(
+      `✅ *تم استقبال طلبك بنجاح!*\n\nشكراً على تواصلك معنا.\n\nسيتم التواصل معك قريباً إن شاء الله 🤲`,
+      { parse_mode: 'Markdown', ...mainKeyboard(ctx.session.userRole) }
+    );
+    return ctx.scene.leave();
+  }
+);
+
 module.exports = {
   scenes: [
     addLessonScene,
@@ -482,6 +661,9 @@ module.exports = {
     manageRoleScene,
     askQuestionScene,
     answerQuestionScene,
-    broadcastScene
+    broadcastScene,
+    toggleMosqueScene,
+    deleteMosqueScene,
+    addHelpRequestScene
   ]
 };

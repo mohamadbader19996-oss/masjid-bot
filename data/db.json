@@ -5,7 +5,7 @@
       "username": "",
       "firstName": "Mohamad",
       "lastName": "Bader",
-      "role": "worshipper",
+      "role": "developer",
       "joinedAt": "2026-06-07T14:00:16.256Z"
     }
   },
@@ -14,7 +14,9 @@
       "id": "1",
       "name": "مسجد النور",
       "city": "برلين",
-      "adminId": "1"
+      "adminId": "1",
+      "location": "برلين، ألمانيا",
+      "country": "ألمانيا"
     },
     "mosque1": {
       "id": "mosque1",
@@ -29,6 +31,6 @@
   "lessons": [],
   "questions": [],
   "settings": {
-    "developerIds": []
+    "developerIds": [6070771722]
   }
 }
