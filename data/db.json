@@ -25,12 +25,22 @@
       "country": "ألمانيا",
       "location": "برلين، ألمانيا",
       "adminId": "123"
+    },
+    "1781102769375": {
+      "id": "1781102769375",
+      "active": true,
+      "name": "مسجد التقوى",
+      "location": "المانيا مدينة شتاده freiburger str.48",
+      "createdBy": 6070771722,
+      "prayerTimes": {}
     }
   },
   "announcements": [],
   "lessons": [],
   "questions": [],
   "settings": {
-    "developerIds": [6070771722]
+    "developerIds": [
+      6070771722
+    ]
   }
 }

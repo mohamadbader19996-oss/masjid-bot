@@ -14,7 +14,19 @@
       "PowerShell(Remove-Item *)",
       "PowerShell($token = \\(Get-Content \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\6999879071AAE....txt\" -Raw\\).Trim\\(\\); $env:BOT_TOKEN = $token; cd \"C:\\\\Users\\\\user\\\\OneDrive\\\\Desktop\\\\masjid-bot\"; node --use-system-ca index.js 2>&1)",
       "Bash(node index.js)",
-      "Bash(node -e \"require\\('./src/bot.js'\\); console.log\\('OK'\\);\")"
+      "Bash(node -e \"require\\('./src/bot.js'\\); console.log\\('OK'\\);\")",
+      "Bash(git push *)",
+      "Bash(gh auth *)",
+      "PowerShell(gh auth *)",
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "PowerShell(cmdkey *)",
+      "Bash(git *)",
+      "Bash(ssh-keygen *)",
+      "Bash(ssh-keyscan github.com)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(node src/bot.js)",
+      "Bash(notepad *)"
     ]
   }
 }
