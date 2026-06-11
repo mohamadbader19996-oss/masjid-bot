@@ -1,7 +1,9 @@
 const db = require('../database');
-const { mainKeyboard, ROLES, ROLE_LABELS } = require('../keyboards');
+const { mainKeyboard, ROLES, ROLE_LABELS, resetUserState } = require('../keyboards');
 
 async function handleStart(ctx) {
+  await resetUserState(ctx);
+
   const userId = ctx.from.id;
   const isDev = db.isDeveloper(userId);
 

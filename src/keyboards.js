@@ -59,4 +59,70 @@ function cancelKeyboard() {
   return Markup.keyboard([['❌ إلغاء']]).resize();
 }
 
-module.exports = { ROLES, ROLE_LABELS, mainKeyboard, cancelKeyboard };
+const MENU_BUTTONS = new Set([
+  ...BASE_BUTTONS.flat(),
+  ...SHEIKH_BUTTONS.flat(),
+  ...ADMIN_BUTTONS.flat(),
+  ...DEVELOPER_BUTTONS.flat()
+]);
+
+const CANCEL_BUTTON = '❌ إلغاء';
+
+const NAV_COMMANDS = new Set(['/start', '/menu', '/cancel', '/help']);
+
+const FLOW_SESSION_KEYS = [
+  'searchingQuran', 'quranAyahPrompt', 'quranHafizMode',
+  'addingSheikh', 'addingSheikhSpecialty', 'addingSheikhPhone', 'sheikhData',
+  'settingIBAN', 'settingPayPal', 'answeringSecretQuestion',
+  'addingCircle', 'addingCircleSchedule', 'addingCircleTopic', 'circleData',
+  'uploadingSermon', 'uploadingSermonContent', 'sermonData'
+];
+
+function isMenuButton(text) {
+  return typeof text === 'string' && MENU_BUTTONS.has(text);
+}
+
+function isNavMessage(text) {
+  if (typeof text !== 'string') return false;
+  const command = text.split('@')[0];
+  return isMenuButton(text) || text === CANCEL_BUTTON || NAV_COMMANDS.has(command);
+}
+
+function isInScene(ctx) {
+  return Boolean(ctx.session?.__scenes?.current);
+}
+
+function hasActiveFlow(ctx) {
+  if (!ctx.session) return false;
+  return FLOW_SESSION_KEYS.some((key) => ctx.session[key] !== undefined && ctx.session[key] !== false);
+}
+
+function clearFlowSession(ctx) {
+  const userRole = ctx.session?.userRole;
+  ctx.session = userRole ? { userRole } : {};
+}
+
+async function resetUserState(ctx) {
+  if (ctx.scene) {
+    try { await ctx.scene.leave(); } catch (e) {}
+  }
+  if (ctx.session?.__scenes) {
+    delete ctx.session.__scenes;
+  }
+  clearFlowSession(ctx);
+}
+
+module.exports = {
+  ROLES,
+  ROLE_LABELS,
+  CANCEL_BUTTON,
+  NAV_COMMANDS,
+  mainKeyboard,
+  cancelKeyboard,
+  isMenuButton,
+  isNavMessage,
+  isInScene,
+  hasActiveFlow,
+  clearFlowSession,
+  resetUserState
+};

@@ -6,7 +6,7 @@ if (!process.env.BOT_TOKEN) {
   process.exit(1);
 }
 
-bot.launch().then(() => {
+bot.launch({ dropPendingUpdates: true }).then(() => {
   console.log('✅ بوت المسجد يعمل...');
   console.log('🛑 اضغط Ctrl+C للإيقاف');
 });

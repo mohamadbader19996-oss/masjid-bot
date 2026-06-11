@@ -1,8 +1,11 @@
 const { Scenes, Markup } = require('telegraf');
 const db = require('./database');
-const { mainKeyboard, cancelKeyboard, ROLES, ROLE_LABELS } = require('./keyboards');
+const { mainKeyboard, cancelKeyboard, ROLES, ROLE_LABELS, isMenuButton, resetUserState } = require('./keyboards');
+const { dispatchMenuButton } = require('./menuHandlers');
 
 // ── مساعدات ──────────────────────────────────────
+
+const PROMPT_UNKNOWN_INPUT = '⚠️ يرجى الضغط على أحد الأزرار أعلاه، أو ❌ إلغاء للخروج.';
 
 function isCancelled(ctx) {
   const txt = ctx.message?.text;
@@ -12,6 +15,23 @@ function isCancelled(ctx) {
 async function leaveWithCancel(ctx) {
   await ctx.reply('❌ تم إلغاء العملية.', mainKeyboard(ctx.session.userRole || ROLES.WORSHIPPER));
   return ctx.scene.leave();
+}
+
+async function handleMenuInterrupt(ctx) {
+  const text = ctx.message?.text;
+  if (!text || !isMenuButton(text)) return false;
+  await resetUserState(ctx);
+  try { await ctx.scene.leave(); } catch (e) {}
+  return dispatchMenuButton(ctx, text);
+}
+
+async function guardTextStep(ctx) {
+  if (isCancelled(ctx)) {
+    await leaveWithCancel(ctx);
+    return true;
+  }
+  if (await handleMenuInterrupt(ctx)) return true;
+  return false;
 }
 
 function formatDate(iso) {
@@ -34,7 +54,7 @@ const addLessonScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const title = ctx.message?.text?.trim();
     if (!title) return ctx.reply('⚠️ يرجى إدخال عنوان صحيح.');
     ctx.wizard.state.title = title;
@@ -43,7 +63,7 @@ const addLessonScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const content = ctx.message?.text?.trim();
     if (!content) return ctx.reply('⚠️ يرجى إدخال محتوى صحيح.');
 
@@ -76,7 +96,7 @@ const addAnnouncementScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const text = ctx.message?.text?.trim();
     if (!text) return ctx.reply('⚠️ يرجى إدخال نص صحيح.');
     ctx.wizard.state.text = text;
@@ -96,8 +116,8 @@ const addAnnouncementScene = new Scenes.WizardScene(
 
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      if (isCancelled(ctx)) return leaveWithCancel(ctx);
-      return;
+      if (await guardTextStep(ctx)) return;
+      return ctx.reply(PROMPT_UNKNOWN_INPUT);
     }
 
     await ctx.answerCbQuery();
@@ -153,7 +173,7 @@ const setPrayerTimesScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
 
     const time = ctx.message?.text?.trim();
     const idx = ctx.wizard.state.idx;
@@ -201,7 +221,7 @@ const addMosqueScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const name = ctx.message?.text?.trim();
     if (!name) return ctx.reply('⚠️ يرجى إدخال اسم صحيح.');
     ctx.wizard.state.name = name;
@@ -210,7 +230,7 @@ const addMosqueScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const location = ctx.message?.text?.trim();
     if (!location) return ctx.reply('⚠️ يرجى إدخال موقع صحيح.');
 
@@ -244,7 +264,7 @@ const manageRoleScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
 
     const userId = parseInt(ctx.message?.text?.trim());
     if (!userId || isNaN(userId)) return ctx.reply('⚠️ يرجى إدخال معرف رقمي صحيح.');
@@ -277,8 +297,8 @@ const manageRoleScene = new Scenes.WizardScene(
 
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      if (isCancelled(ctx)) return leaveWithCancel(ctx);
-      return ctx.reply('يرجى الضغط على أحد الأزرار أعلاه.');
+      if (await guardTextStep(ctx)) return;
+      return ctx.reply(PROMPT_UNKNOWN_INPUT);
     }
 
     await ctx.answerCbQuery();
@@ -320,7 +340,7 @@ const askQuestionScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const text = ctx.message?.text?.trim();
     if (!text) return ctx.reply('⚠️ يرجى إدخال سؤالك.');
 
@@ -365,7 +385,7 @@ const answerQuestionScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const answer = ctx.message?.text?.trim();
     if (!answer) return ctx.reply('⚠️ يرجى إدخال إجابة صحيحة.');
 
@@ -410,7 +430,7 @@ const broadcastScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const text = ctx.message?.text?.trim();
     if (!text) return ctx.reply('⚠️ يرجى إدخال نص صحيح.');
     ctx.wizard.state.text = text;
@@ -430,8 +450,8 @@ const broadcastScene = new Scenes.WizardScene(
 
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      if (isCancelled(ctx)) return leaveWithCancel(ctx);
-      return;
+      if (await guardTextStep(ctx)) return;
+      return ctx.reply(PROMPT_UNKNOWN_INPUT);
     }
 
     await ctx.answerCbQuery();
@@ -485,7 +505,7 @@ const toggleMosqueScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const mosqueId = ctx.message?.text?.trim();
     if (!mosqueId) return ctx.reply('⚠️ يرجى إدخال معرف مسجد صحيح.');
 
@@ -511,8 +531,8 @@ const toggleMosqueScene = new Scenes.WizardScene(
 
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      if (isCancelled(ctx)) return leaveWithCancel(ctx);
-      return;
+      if (await guardTextStep(ctx)) return;
+      return ctx.reply(PROMPT_UNKNOWN_INPUT);
     }
 
     await ctx.answerCbQuery();
@@ -553,7 +573,7 @@ const deleteMosqueScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const mosqueId = ctx.message?.text?.trim();
     if (!mosqueId) return ctx.reply('⚠️ يرجى إدخال معرف مسجد صحيح.');
 
@@ -578,8 +598,8 @@ const deleteMosqueScene = new Scenes.WizardScene(
 
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      if (isCancelled(ctx)) return leaveWithCancel(ctx);
-      return;
+      if (await guardTextStep(ctx)) return;
+      return ctx.reply(PROMPT_UNKNOWN_INPUT);
     }
 
     await ctx.answerCbQuery();
@@ -614,7 +634,7 @@ const addHelpRequestScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const name = ctx.message?.text?.trim();
     if (!name) return ctx.reply('⚠️ يرجى إدخال اسمك.');
     ctx.wizard.state.name = name;
@@ -623,7 +643,7 @@ const addHelpRequestScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const phone = ctx.message?.text?.trim() === 'اختياري' ? '' : ctx.message?.text?.trim();
     ctx.wizard.state.phone = phone;
     await ctx.reply(
@@ -634,7 +654,7 @@ const addHelpRequestScene = new Scenes.WizardScene(
   },
 
   async (ctx) => {
-    if (isCancelled(ctx)) return leaveWithCancel(ctx);
+    if (await guardTextStep(ctx)) return;
     const description = ctx.message?.text?.trim();
     if (!description) return ctx.reply('⚠️ يرجى وصف احتياجك.');
 
