@@ -184,3 +184,21 @@ module.exports = {
   manageDonations, donation_set_iban, donation_set_paypal,
   manageHelpRequests, help_resolve, showMosqueStats, manageMosque, listUsers
 };
+
+const registry = require('../core/actionRegistry');
+
+registry.registerMenu('🔐 لوحة التحكم', adminPanel, 'لوحة التحكم');
+registry.registerMenu('👥 قائمة المستخدمين', listUsers, 'قائمة المستخدمين');
+
+registry.registerAction('admin_sheikhs', manageSheikhs, 'إدارة المشايخ');
+registry.registerAction('sheikh_add', sheikhs_add_name, 'إضافة شيخ');
+registry.registerAction(/^sheikh_delete_(.+)$/, (ctx) => sheikhs_delete(ctx, ctx.match[1]), 'حذف شيخ');
+registry.registerAction('admin_donations', manageDonations, 'إدارة التبرعات');
+registry.registerAction('donation_set_iban', donation_set_iban, 'تعيين IBAN');
+registry.registerAction('donation_set_paypal', donation_set_paypal, 'تعيين PayPal');
+registry.registerAction('admin_help_requests', manageHelpRequests, 'طلبات المساعدة');
+registry.registerAction(/^help_resolve_(.+)$/, (ctx) => help_resolve(ctx, ctx.match[1]), 'معالجة طلب مساعدة');
+registry.registerAction('admin_stats', showMosqueStats, 'إحصائيات المسجد');
+registry.registerAction('admin_mosque_info', manageMosque, 'معلومات المسجد');
+registry.registerAction('admin_back', adminPanel, 'العودة للوحة التحكم');
+registry.registerAction('admin_users', listUsers, 'إدارة المستخدمين');

@@ -68,3 +68,12 @@ module.exports = {
   enterDeleteMosque,
   broadcastAnnouncement
 };
+
+const registry = require('../core/actionRegistry');
+
+registry.registerMenu('📊 إحصائيات', showStats, 'إحصائيات المطور');
+registry.registerMenu('📡 رسالة جماعية', broadcastAnnouncement, 'رسالة جماعية');
+registry.registerMenu('📣 إعلان عام', broadcastAnnouncement, 'إعلان عام');
+registry.registerMenu('🕌 قائمة المساجد', listMosques, 'قائمة المساجد');
+registry.registerMenu('❄️ تفعيل/تجميد مسجد', enterToggleMosque, 'تفعيل/تجميد مسجد');
+registry.registerMenu('🗑️ حذف مسجد', enterDeleteMosque, 'حذف مسجد');

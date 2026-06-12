@@ -15,6 +15,7 @@ const DEFAULT_DB = {
   secretQuestions: [],
   quranyCircles: [],
   sermons: [],
+  sheikhInbox: [],
   settings: { developerIds: [] }
 };
 
@@ -173,7 +174,7 @@ function addSheikh(data) {
 }
 
 function allSheikhs() {
-  return load().sheikhs;
+  return load().sheikhs || [];
 }
 
 function deleteSheikh(id) {
@@ -380,6 +381,34 @@ function deleteSermon(id) {
   return true;
 }
 
+// ── رسائل الشيخ ──────────────────────────────────
+
+function addSheikhInboxMessage(data) {
+  const db = load();
+  if (!db.sheikhInbox) db.sheikhInbox = [];
+  const item = {
+    id: Date.now().toString(),
+    read: false,
+    at: new Date().toISOString(),
+    ...data
+  };
+  db.sheikhInbox.unshift(item);
+  db.sheikhInbox = db.sheikhInbox.slice(0, 100);
+  save(db);
+  return item;
+}
+
+function getSheikhInbox(sheikhId, limit = 8) {
+  const inbox = load().sheikhInbox || [];
+  return inbox
+    .filter((m) => !m.sheikhId || String(m.sheikhId) === String(sheikhId))
+    .slice(0, limit);
+}
+
+function allSheikhInbox() {
+  return load().sheikhInbox || [];
+}
+
 // ── صلاحية المطور ─────────────────────────────────
 function isDeveloper(id) {
   const envIds = (process.env.DEVELOPER_IDS || '')
@@ -388,6 +417,250 @@ function isDeveloper(id) {
     .filter(Boolean);
   const dbIds = load().settings.developerIds;
   return envIds.includes(Number(id)) || dbIds.includes(Number(id));
+}
+
+function initDB(db) {
+  const defaults = {
+    scholars: [],
+    scholar_applications: [],
+    council_members: [],
+    warnings: [],
+    disputes: [],
+    reputation: {},
+    councils: [],
+    aiResponses: [],
+    moderators: []
+  };
+  let changed = false;
+  for (const [key, value] of Object.entries(defaults)) {
+    if (db[key] === undefined) {
+      db[key] = Array.isArray(value) ? [] : { ...value };
+      changed = true;
+    }
+  }
+  if (changed) save(db);
+  return db;
+}
+
+function readDB() {
+  return initDB(load());
+}
+
+function saveDB(db) {
+  save(db);
+}
+
+// ===== SCHOLAR SYSTEM =====
+
+function addScholarApplication(data) {
+  const db = readDB();
+  const application = {
+    id: Date.now().toString(),
+    userId: data.userId,
+    username: data.username,
+    fullName: data.fullName,
+    specialization: data.specialization,
+    qualification: data.qualification,
+    institution: data.institution,
+    country: data.country,
+    documentation: data.documentation,
+    recommendation: data.recommendation,
+    phone: data.phone || '',
+    status: 'pending',
+    submittedAt: new Date().toISOString(),
+    reviewedAt: null,
+    reviewedBy: null,
+    rejectionReason: null
+  };
+  db.scholar_applications.push(application);
+  saveDB(db);
+  return application;
+}
+
+function getPendingScholarApplications() {
+  const db = readDB();
+  return (db.scholar_applications || []).filter(a => a.status === 'pending');
+}
+
+function approveScholarApplication(applicationId, reviewerId) {
+  const db = readDB();
+  const app = db.scholar_applications.find(a => a.id === applicationId);
+  if (!app) return null;
+  app.status = 'approved';
+  app.reviewedAt = new Date().toISOString();
+  app.reviewedBy = reviewerId;
+  if (db.users[app.userId]) {
+    db.users[app.userId].role = 'SCHOLAR';
+    db.users[app.userId].scholarSince = new Date().toISOString();
+    db.users[app.userId].country = app.country;
+  }
+  if (!db.scholars) db.scholars = [];
+  db.scholars.push({
+    userId: app.userId,
+    fullName: app.fullName,
+    specialization: app.specialization,
+    country: app.country,
+    reputation: 100,
+    approvedAt: new Date().toISOString()
+  });
+  saveDB(db);
+  return app;
+}
+
+function rejectScholarApplication(applicationId, reviewerId, reason) {
+  const db = readDB();
+  const app = db.scholar_applications.find(a => a.id === applicationId);
+  if (!app) return null;
+  app.status = 'rejected';
+  app.reviewedAt = new Date().toISOString();
+  app.reviewedBy = reviewerId;
+  app.rejectionReason = reason;
+  saveDB(db);
+  return app;
+}
+
+function addWarning(data) {
+  const db = readDB();
+  if (!db.warnings) db.warnings = [];
+  const warning = {
+    id: Date.now().toString(),
+    fromScholarId: data.fromScholarId,
+    toSheikhId: data.toSheikhId,
+    type: data.type,
+    message: data.message,
+    evidence: data.evidence,
+    status: 'pending',
+    sheikhResponse: null,
+    sheikhEvidence: null,
+    createdAt: new Date().toISOString(),
+    resolvedAt: null
+  };
+  db.warnings.push(warning);
+  saveDB(db);
+  return warning;
+}
+
+function respondToWarning(warningId, response, evidence) {
+  const db = readDB();
+  const warning = db.warnings.find(w => w.id === warningId);
+  if (!warning) return null;
+  warning.sheikhResponse = response;
+  warning.sheikhEvidence = evidence;
+  warning.status = 'disputed';
+  saveDB(db);
+  return warning;
+}
+
+// حفظ إجابة الذكاء الاصطناعي
+function saveAIResponse(data) {
+  const db = readDB();
+  if (!db.aiResponses) db.aiResponses = [];
+  const response = {
+    id: Date.now().toString(),
+    userId: data.userId,
+    question: data.question,
+    answer: data.answer,
+    mode: data.mode || 'general',
+    isSensitive: data.isSensitive || false,
+    status: 'pending',
+    scholarCorrection: null,
+    scholarId: null,
+    correctedAt: null,
+    timestamp: data.timestamp || new Date().toISOString()
+  };
+  db.aiResponses.push(response);
+  if (db.aiResponses.length > 200) {
+    db.aiResponses = db.aiResponses.slice(-200);
+  }
+  saveDB(db);
+  return response;
+}
+
+function getPendingAIResponses() {
+  const db = readDB();
+  if (!db.aiResponses) return [];
+  return db.aiResponses.filter(r => r.status === 'pending').slice(-20);
+}
+
+function getSensitiveAIResponses() {
+  const db = readDB();
+  if (!db.aiResponses) return [];
+  return db.aiResponses.filter(r => r.isSensitive && r.status === 'pending');
+}
+
+function correctAIResponse(responseId, scholarId, correction) {
+  const db = readDB();
+  if (!db.aiResponses) return null;
+  const response = db.aiResponses.find(r => r.id === responseId);
+  if (!response) return null;
+  response.status = 'corrected';
+  response.scholarCorrection = correction;
+  response.scholarId = scholarId;
+  response.correctedAt = new Date().toISOString();
+  saveDB(db);
+  return response;
+}
+
+function approveAIResponse(responseId, scholarId) {
+  const db = readDB();
+  if (!db.aiResponses) return null;
+  const response = db.aiResponses.find(r => r.id === responseId);
+  if (!response) return null;
+  response.status = 'approved';
+  response.scholarId = scholarId;
+  response.correctedAt = new Date().toISOString();
+  saveDB(db);
+  return response;
+}
+
+// ═══ نظام MODERATOR ═══
+
+function addModerator(userId, addedBy) {
+  const db = readDB();
+  if (!db.moderators) db.moderators = [];
+  const exists = db.moderators.find(m => m.userId === String(userId));
+  if (exists) return null;
+  const moderator = {
+    userId: String(userId),
+    addedBy: String(addedBy),
+    addedAt: new Date().toISOString(),
+    active: true
+  };
+  db.moderators.push(moderator);
+  if (db.users[userId]) {
+    db.users[userId].role = 'MODERATOR';
+  }
+  saveDB(db);
+  return moderator;
+}
+
+function removeModerator(userId) {
+  const db = readDB();
+  if (!db.moderators) return false;
+  const index = db.moderators.findIndex(m => m.userId === String(userId));
+  if (index === -1) return false;
+  db.moderators.splice(index, 1);
+  if (db.users[userId]) {
+    db.users[userId].role = 'WORSHIPPER';
+  }
+  saveDB(db);
+  return true;
+}
+
+function getModerators() {
+  const db = readDB();
+  return db.moderators || [];
+}
+
+function isModerator(userId) {
+  const db = readDB();
+  if (!db.moderators) return false;
+  return db.moderators.some(m => m.userId === String(userId) && m.active);
+}
+
+function getAllScholars() {
+  const db = readDB();
+  return db.scholars || [];
 }
 
 module.exports = {
@@ -402,5 +675,22 @@ module.exports = {
   addSecretQuestion, allSecretQuestions, getPendingSecretQuestions, getSecretQuestion, answerSecretQuestion,
   addQuranyCircle, allQuranyCircles, getQuranyCircle, deleteQuranyCircle, getCirclesByAuthor, addParticipantToCircle,
   addSermon, allSermons, getSermonsByAuthor, deleteSermon,
-  isDeveloper
+  addSheikhInboxMessage, getSheikhInbox, allSheikhInbox,
+  isDeveloper,
+  addScholarApplication,
+  getPendingScholarApplications,
+  approveScholarApplication,
+  rejectScholarApplication,
+  addWarning,
+  respondToWarning,
+  saveAIResponse,
+  getPendingAIResponses,
+  getSensitiveAIResponses,
+  correctAIResponse,
+  approveAIResponse,
+  addModerator,
+  removeModerator,
+  getModerators,
+  isModerator,
+  getAllScholars
 };

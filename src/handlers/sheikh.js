@@ -38,3 +38,7 @@ async function showPendingQuestions(ctx) {
 }
 
 module.exports = { showPendingQuestions };
+
+const registry = require('../core/actionRegistry');
+
+registry.registerMenu('💬 الأسئلة الواردة', showPendingQuestions, 'الأسئلة الواردة');

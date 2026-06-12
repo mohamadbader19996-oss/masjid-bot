@@ -14,8 +14,13 @@ const ROLE_LABELS = {
   worshipper: '🕌 مصلي'
 };
 
-// أزرار القائمة حسب الدور
+const AI_BUTTON = '🤖 المساعد الديني';
+const AI_SHEIKH_BUTTON = '🤖 المساعد الديني للمشايخ';
+const MESSAGES_BUTTON = '📬 الرسائل';
+
+// أزرار القائمة حسب الدور — المساعد الديني في صف مستقل ليظهر على جميع الشاشات
 const BASE_BUTTONS = [
+  ['🤖 المساعد الديني'],
   ['📅 مواقيت الصلاة', '📢 الإعلانات'],
   ['📚 الدروس', '🕌 معلومات المسجد'],
   ['❓ إرسال سؤال', '🆘 طلب مساعدة'],
@@ -24,7 +29,8 @@ const BASE_BUTTONS = [
 
 const SHEIKH_BUTTONS = [
   ['📝 إضافة درس', '💬 الأسئلة الواردة'],
-  ['📖 لوحة الشيخ']
+  ['📖 لوحة الشيخ', MESSAGES_BUTTON],
+  [AI_SHEIKH_BUTTON]
 ];
 
 const ADMIN_BUTTONS = [
@@ -39,9 +45,30 @@ const DEVELOPER_BUTTONS = [
   ['❄️ تفعيل/تجميد مسجد', '🗑️ حذف مسجد']
 ];
 
+const WORSHIPPER_BUTTONS = [
+  ['🎓 أنا عالم']
+];
+
+const SCHOLAR_BUTTONS = [
+  ['⚔️ أدوات المناظرة', '✏️ مراجعة الإجابات'],
+  ['🕌 إدارة المشايخ', '📊 سجل النزاعات'],
+  ['📬 صندوق العالم']
+];
+
+const MODERATOR_BUTTONS = [
+  ['📋 طلبات العلماء', '🕌 طلبات المساجد'],
+  ['📊 إحصائيات المشرف']
+];
+
 function mainKeyboard(role) {
   let rows = [...BASE_BUTTONS];
 
+  if (role === ROLES.WORSHIPPER) {
+    rows = [...rows, ...WORSHIPPER_BUTTONS];
+  }
+  if (role === 'SCHOLAR') {
+    rows = [...rows, ...SCHOLAR_BUTTONS];
+  }
   if ([ROLES.SHEIKH, ROLES.ADMIN, ROLES.DEVELOPER].includes(role)) {
     rows = [...rows, ...SHEIKH_BUTTONS];
   }
@@ -50,6 +77,15 @@ function mainKeyboard(role) {
   }
   if (role === ROLES.DEVELOPER) {
     rows = [...rows, ...DEVELOPER_BUTTONS];
+  }
+  if (role === ROLES.DEVELOPER) {
+    rows = [...rows, ...WORSHIPPER_BUTTONS, ...SCHOLAR_BUTTONS];
+  }
+  if (role === 'MODERATOR') {
+    rows = [...rows, ...MODERATOR_BUTTONS];
+  }
+  if (role === 'developer' || role === 'DEVELOPER') {
+    rows = [...rows, ...MODERATOR_BUTTONS];
   }
 
   return Markup.keyboard(rows).resize();
@@ -61,9 +97,12 @@ function cancelKeyboard() {
 
 const MENU_BUTTONS = new Set([
   ...BASE_BUTTONS.flat(),
+  ...WORSHIPPER_BUTTONS.flat(),
   ...SHEIKH_BUTTONS.flat(),
   ...ADMIN_BUTTONS.flat(),
-  ...DEVELOPER_BUTTONS.flat()
+  ...DEVELOPER_BUTTONS.flat(),
+  ...SCHOLAR_BUTTONS.flat(),
+  ...MODERATOR_BUTTONS.flat()
 ]);
 
 const CANCEL_BUTTON = '❌ إلغاء';
@@ -71,6 +110,9 @@ const CANCEL_BUTTON = '❌ إلغاء';
 const NAV_COMMANDS = new Set(['/start', '/menu', '/cancel', '/help']);
 
 const FLOW_SESSION_KEYS = [
+  'aiMode', 'aiSetupStep', 'aiMadhabSelection', 'aiSectSelection', 'aiWaitingCity',
+  'aiScholarContext', 'aiScholarAdvancedMode',
+  'aiKhutbahMode', 'aiKhutbahStep', 'aiTargetLanguage',
   'searchingQuran', 'quranAyahPrompt', 'quranHafizMode',
   'addingSheikh', 'addingSheikhSpecialty', 'addingSheikhPhone', 'sheikhData',
   'settingIBAN', 'settingPayPal', 'answeringSecretQuestion',
@@ -115,8 +157,12 @@ async function resetUserState(ctx) {
 module.exports = {
   ROLES,
   ROLE_LABELS,
+  AI_BUTTON,
+  AI_SHEIKH_BUTTON,
+  MESSAGES_BUTTON,
   CANCEL_BUTTON,
   NAV_COMMANDS,
+  MENU_BUTTONS,
   mainKeyboard,
   cancelKeyboard,
   isMenuButton,

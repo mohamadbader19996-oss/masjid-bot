@@ -252,6 +252,48 @@ async function readAyah(ctx, text) {
   ]));
 }
 
+async function handleReadSurahAction(ctx) {
+  await ctx.answerCbQuery();
+  return readSurah(ctx, parseInt(ctx.match[1], 10));
+}
+
+async function handleSurahPageAction(ctx) {
+  await ctx.answerCbQuery();
+  return showSurahs(ctx, parseInt(ctx.match[1], 10));
+}
+
+async function handleHafizRepeatAction(ctx) {
+  await ctx.answerCbQuery();
+  ctx.session.quranHafizMode = true;
+  return hafizMode(ctx, ctx.match[1] + ':' + ctx.match[2]);
+}
+
+async function handleHafizNextAction(ctx) {
+  await ctx.answerCbQuery();
+  ctx.session.quranHafizMode = true;
+  return hafizMode(ctx, ctx.match[1] + ':' + (parseInt(ctx.match[2], 10) + 1));
+}
+
+async function handleSearchPromptAction(ctx) {
+  ctx.session.searchingQuran = true;
+  await ctx.answerCbQuery();
+  await ctx.reply('🔍 أرسل كلمة البحث في القرآن الكريم الآن:');
+}
+
+async function handleSearchAction(ctx) {
+  ctx.session.searchingQuran = true;
+  await ctx.answerCbQuery();
+  await ctx.reply('🔍 أرسل كلمة البحث في القرآن الكريم الآن:');
+}
+
+async function handleNoopAction(ctx) {
+  return ctx.answerCbQuery();
+}
+
+async function handleShowSurahsAction(ctx) {
+  return showSurahs(ctx, 1);
+}
+
 module.exports = {
   quranMenu,
   showSurahs,
@@ -267,3 +309,24 @@ module.exports = {
   promptAyah,
   readAyah
 };
+
+const registry = require('../core/actionRegistry');
+
+registry.registerMenu('📖 القرآن الكريم', quranMenu, 'القرآن الكريم');
+
+registry.registerAction('quran_menu', quranMenu, 'قائمة القرآن');
+registry.registerAction('quran_show_surahs', handleShowSurahsAction, 'قائمة السور');
+registry.registerAction('quran_show_languages', showLanguages, 'لغات القرآن');
+registry.registerAction('quran_show_reciters', showReciters, 'قراء القرآن');
+registry.registerAction('quran_ayah_prompt', promptAyah, 'آية محددة');
+registry.registerAction('quran_hafiz_prompt', promptHafiz, 'وضع الحافظ');
+registry.registerAction('noop', handleNoopAction, 'زر معطل');
+registry.registerAction(/^quran_read_(\d+)$/, handleReadSurahAction, 'قراءة سورة');
+registry.registerAction(/^quran_page_(\d+)$/, handleSurahPageAction, 'صفحة السور');
+registry.registerAction(/^quran_set_lang_(.+)$/, (ctx) => setLanguage(ctx, ctx.match[1]), 'تعيين لغة القرآن');
+registry.registerAction(/^quran_set_reciter_(.+)$/, (ctx) => setReciter(ctx, ctx.match[1]), 'تعيين قارئ');
+registry.registerAction(/^quran_tafsir_(\d+)_(\d+)$/, (ctx) => showTafsir(ctx, parseInt(ctx.match[1], 10), parseInt(ctx.match[2], 10)), 'تفسير آية');
+registry.registerAction(/^quran_hafiz_repeat_(\d+)_(\d+)$/, handleHafizRepeatAction, 'تكرار آية الحافظ');
+registry.registerAction(/^quran_hafiz_next_(\d+)_(\d+)$/, handleHafizNextAction, 'الآية التالية للحافظ');
+registry.registerAction('quran_search_prompt', handleSearchPromptAction, 'بحث القرآن');
+registry.registerAction('quran_search', handleSearchAction, 'بحث القرآن (لوحة الشيخ)');

@@ -5,10 +5,14 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
+    "prestart": "node src/core/healthCheck.js",
     "start": "node --use-system-ca index.js",
-    "dev": "nodemon --exec \"node --use-system-ca\" index.js"
+    "dev": "nodemon --exec \"node --use-system-ca\" index.js",
+    "check": "node src/core/healthCheck.js"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.4.1",
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.17.0",
     "dotenv": "^16.4.5",
     "telegraf": "^4.16.3"

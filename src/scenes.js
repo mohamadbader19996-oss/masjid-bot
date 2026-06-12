@@ -672,8 +672,11 @@ const addHelpRequestScene = new Scenes.WizardScene(
   }
 );
 
+const scholarApplyScene = require('./scenes/scholarApplyScene');
+
 module.exports = {
   scenes: [
+    scholarApplyScene,
     addLessonScene,
     addAnnouncementScene,
     setPrayerTimesScene,

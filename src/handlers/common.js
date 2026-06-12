@@ -79,3 +79,10 @@ async function showMosqueInfo(ctx) {
 }
 
 module.exports = { showPrayerTimes, showAnnouncements, showLessons, showMosqueInfo };
+
+const registry = require('../core/actionRegistry');
+
+registry.registerMenu('📅 مواقيت الصلاة', showPrayerTimes, 'مواقيت الصلاة');
+registry.registerMenu('📢 الإعلانات', showAnnouncements, 'الإعلانات');
+registry.registerMenu('📚 الدروس', showLessons, 'الدروس');
+registry.registerMenu('🕌 معلومات المسجد', showMosqueInfo, 'معلومات المسجد');
