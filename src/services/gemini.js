@@ -66,19 +66,40 @@ const MUSLIM_FORMAT_PROMPT_RULE =
 const MUSLIM_FOOTER_PROMPT_RULE =
   'في نهاية كل إجابة بدون استثناء أضف التنبيه الشرعي حرفياً كما في قواعد التنسيق أعلاه';
 
+const MAIN_SYSTEM_PROMPT = `أنت عالم إسلامي متخصص ومتمكن، 
+تجمع بين العلم الشرعي العميق والأسلوب العصري الواضح.
+قواعدك في الإجابة:
+1. ابدأ بتعريف المصطلح تعريفاً دقيقاً من المصادر الأصيلة
+2. اذكر الدليل من القرآن أو السنة مع ذكر المصدر
+3. اشرح الحكم الشرعي بوضوح
+4. اذكر آراء العلماء المعتمدين إن كان هناك خلاف
+5. اختم بفائدة عملية للمسلم في حياته اليومية
+6. الإجابة يجب أن تكون شاملة وكاملة وليست مختصرة
+7. لا تقل "لا أعلم" إلا إذا كانت المسألة خارج نطاق العلم الشرعي
+8. تنبيه: هذه معلومات علمية — للفتوى الشخصية استشر عالماً
+مثال على جودة الإجابة المطلوبة:
+سؤال: ما هو الرياء؟
+إجابة نموذجية:
+- التعريف: الرياء لغةً واصطلاحاً
+- الدليل: آيات وأحاديث موثقة
+- الحكم: من الشرك الأصغر
+- أنواعه وعلاماته
+- كيف يتخلص منه المسلم
+- دعاء الاستعاذة منه`;
+
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const MODEL_FALLBACKS = [
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash'
+  'gemini-3.5-flash',
+  'gemini-flash-latest'
 ];
 
 const VISION_MODEL_FALLBACKS = [
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash'
+  'gemini-3.5-flash',
+  'gemini-flash-latest'
 ];
 
 function getRawApiKey() {
@@ -256,21 +277,113 @@ async function askGeminiAudio(audioBase64, mimeType, prompt, systemInstruction) 
   return askGeminiWithParts(parts, systemInstruction, VISION_MODEL_FALLBACKS);
 }
 
+function parseJsonFromGeminiText(text) {
+  let raw = String(text || '').trim();
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) raw = fence[1].trim();
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
+  return JSON.parse(raw);
+}
+
+function stripArabicForRecitationCompare(text) {
+  return String(text || '')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u06E0-\u06ED\u0610-\u061A\u0640\u06DF\u06E2\u06E3\u06E4\u06E5\u06E6\u06E7\u06E8\u06E9\u06EA\u06EB\u06EC\u06ED]/g, '')
+    .replace(/[\u0622\u0623\u0625\u0671\u0627]/g, 'ا')
+    .replace(/[\u0649\u0626]/g, 'ي')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function refineRecitationResult(expected, heardText, parsed) {
+  const heard = String(heardText || '').trim();
+  const expNorm = stripArabicForRecitationCompare(expected);
+  const hearNorm = stripArabicForRecitationCompare(heard);
+
+  if (!hearNorm) {
+    return {
+      matches: false,
+      errors: [{ expected: expected, heard: null, type: 'missing' }],
+      heardText: heard
+    };
+  }
+
+  if (expNorm === hearNorm) {
+    return { matches: true, errors: [], heardText: heard };
+  }
+
+  if (expNorm.startsWith(hearNorm) && hearNorm.length < expNorm.length) {
+    return {
+      matches: false,
+      errors: [{ expected: expected, heard: null, type: 'missing' }],
+      heardText: heard
+    };
+  }
+
+  return {
+    matches: parsed.matches === true,
+    errors: Array.isArray(parsed.errors) ? parsed.errors : [],
+    heardText: heard
+  };
+}
+
+async function checkRecitation(audioBase64, mimeType, expectedText) {
+  const expected = String(expectedText || '').trim();
+
+  const transcribePrompt =
+    'استمع لهذا التسجيل القرآني. أخرج بالعربية فقط ما يُسمع من كلمات/حروف القرآن (بدون شرح أو ترجمة). ' +
+    'إذا كانت آية حروفاً مقطعة (مثل: الم) فاكتبها ككلمة واحدة كما تُلفظ. ' +
+    'لا تضف أي كلمة لم تُسمع بوضوح. إذا انقطع التسجيل قبل اكتمال الآية، اكتب فقط ما سُمع فعلاً.';
+  const transcribeInstruction =
+    'أنت ناسخ تلاوة قرآنية. أرجع النص المقروء بالعربية فقط.';
+
+  const { text: heardText } = await askGeminiAudio(
+    audioBase64,
+    mimeType,
+    transcribePrompt,
+    transcribeInstruction
+  );
+
+  const comparePrompt =
+    'قارن النص المتوقع بالمقروء كلمة بكلمة.\n\n' +
+    'النص المتوقع:\n' + expected + '\n\n' +
+    'النص المقروء (من التسجيل):\n' + heardText + '\n\n' +
+    'حدد فقط: كلمات محذوفة، زائدة، أو مستبدلة بكلمة أخرى تماماً.\n' +
+    'لا تُعلّق على التجويد (مد، غنة، إخفاء). تجاهل اختلافات التشكيل/الهمزات الطفيفة.\n' +
+    'إذا كان المقروء آية أو نصاً مختلفاً عن المتوقع، يجب matches:false.\n\n' +
+    'تأكد بدقة: هل التسجيل الصوتي يحتوي على كل كلمات النص المتوقع بدون أي نقص، حتى لو كان النقص في نهاية التسجيل؟ ' +
+    'إن كان التسجيل أقصر من النص المتوقع أو ينقطع قبل اكتماله، اعتبر هذا خطأ من نوع missing لكل الكلمات الناقصة في النهاية، ' +
+    'ولا تعتبره matches:true أبداً في هذه الحالة.\n' +
+    'أرجع JSON فقط:\n' +
+    '{"matches": true|false, "errors": [{"expected":"...","heard":"... أو null","type":"missing|extra|wrong"}]}';
+
+  const compareInstruction =
+    'أنت فاحص حفظ قرآني. قارن النصين حرفياً. أرجع JSON صالحاً فقط.';
+
+  const { text } = await askGemini(comparePrompt, compareInstruction);
+  const parsed = parseJsonFromGeminiText(text);
+  return refineRecitationResult(expected, heardText, parsed);
+}
+
+const SENSITIVE_KEYWORDS = [
+  'حلال', 'حرام', 'فتوى', 'طلاق', 'ربا', 'زكاة',
+  'جهاد', 'كفر', 'شرك', 'بدعة', 'حد', 'قصاص',
+  'ميراث', 'نكاح', 'خلع', 'ردة'
+];
+
+function isSensitiveQuestion(question) {
+  const text = String(question || '').toLowerCase();
+  return SENSITIVE_KEYWORDS.some((keyword) => text.includes(keyword));
+}
+
 async function askGemini(question, systemInstruction, meta = {}) {
   const result = await tryModelsWithKeys(
     (apiKey, model) => generateWithModel(apiKey, model, question, systemInstruction),
     MODEL_FALLBACKS
   );
   const answer = result.text;
-
-  const sensitiveKeywords = [
-    'حلال', 'حرام', 'فتوى', 'طلاق', 'ربا', 'زكاة',
-    'جهاد', 'كفر', 'شرك', 'بدعة', 'حد', 'قصاص',
-    'ميراث', 'نكاح', 'خلع', 'ردة'
-  ];
-  const isSensitive = sensitiveKeywords.some(keyword =>
-    question.toLowerCase().includes(keyword)
-  );
+  const isSensitive = isSensitiveQuestion(question);
 
   const userId = meta.userId;
   if (userId) {
@@ -372,13 +485,17 @@ module.exports = {
   MUSLIM_ANSWER_FOOTER,
   MUSLIM_FOOTER_PROMPT_RULE,
   MUSLIM_FORMAT_PROMPT_RULE,
+  MAIN_SYSTEM_PROMPT,
   getApiKey,
   getKeyVariants,
   validateKeyFormat,
   parseGeminiError,
   askGemini,
+  isSensitiveQuestion,
   askGeminiVision,
   askGeminiAudio,
+  checkRecitation,
+  parseJsonFromGeminiText,
   askGeminiWithImage,
   testConnection
 };

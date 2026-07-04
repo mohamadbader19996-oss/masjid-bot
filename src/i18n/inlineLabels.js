@@ -1,0 +1,106 @@
+/** ترجمة أزرار inline حسب callback_data — لا تعتمد على Gemini */
+const INLINE_LABELS = {
+  de: {
+    ai_muslim_start: '🕌 Religiöser Assistent',
+    ai_dawah_start: '🕊️ Einladung zur Weisheit',
+    ai_religion_muslim: 'Muslim 🌙',
+    ai_religion_christian: 'Christ ✝️',
+    ai_religion_jewish: 'Jude ✡️',
+    ai_religion_secular: 'Nicht religiös 🤔',
+    ai_madhab_hanafi: 'Hanafi 🔵',
+    ai_madhab_maliki: 'Maliki 🟢',
+    ai_madhab_shafii: 'Schafitisch 🟡',
+    ai_madhab_hanbali: 'Hanbali 🔴',
+    ai_sect_catholic: 'Katholisch ⛪',
+    ai_sect_christian_orthodox: 'Orthodox 🕍',
+    ai_sect_protestant: 'Protestantisch 📖',
+    ai_sect_christian_unknown: 'Ich weiß nicht ⚪',
+    ai_sect_jewish_orthodox: 'Orthodox',
+    ai_sect_conservative: 'Konservativ',
+    ai_sect_reform: 'Reform',
+    ai_sect_jewish_unknown: 'Ich weiß nicht ⚪',
+    ai_muslim_accept: '✅ Ich verstehe und stimme zu',
+    ai_muslim_contact_direct: '📩 Direkt mit Scheich sprechen',
+    ai_listen_answer: '🔊 Antwort anhören',
+    ai_contact_sheikh: '📩 Scheich kontaktieren',
+    ai_ask_another: '❓ Weitere Frage',
+    ai_change_assistant: '🔄 Assistent wechseln',
+    ai_contact_no: 'Nein danke',
+    ai_scholar_menu: '🔙 Scheich-Menü',
+    ai_scholar_advanced: '❓ Fortgeschrittene Frage',
+    ai_khutbah_write: '📝 Freitagspredigt schreiben',
+    ai_khutbah_translate: '🌍 Predigt übersetzen',
+    ai_khutbah_improve: '✏️ Predigt verbessern',
+    ai_accept: '✅ Akzeptieren',
+    ai_decline: '❌ Ablehnen',
+    dawah_menu: '🕊️ Daʿwa-Menü',
+    dawah_library: '📚 Daʿwa-Bibliothek',
+    dawah_videos: '🎥 Daʿwa-Videos',
+    dawah_counter: '🌙 Neu-Muslime',
+    dawah_volunteer: '🤝 Freiwilliger kontaktieren',
+    vol_start_reg: '✅ Als Freiwilliger registrieren',
+    vol_stats: '📊 Freiwilligen-Statistik',
+    quran_menu: '📖 Quran-Menü',
+    quran_show_surahs: '📋 Surenliste',
+    quran_search_prompt: '🔍 Quran suchen',
+    noop: '—'
+  },
+  en: {
+    ai_muslim_start: '🕌 Religious Assistant',
+    ai_dawah_start: '🕊️ Invitation to Wisdom',
+    ai_religion_muslim: 'Muslim 🌙',
+    ai_religion_christian: 'Christian ✝️',
+    ai_religion_jewish: 'Jewish ✡️',
+    ai_religion_secular: 'Non-religious 🤔',
+    ai_madhab_hanafi: 'Hanafi 🔵',
+    ai_madhab_maliki: 'Maliki 🟢',
+    ai_madhab_shafii: 'Shafi\'i 🟡',
+    ai_madhab_hanbali: 'Hanbali 🔴',
+    ai_madhab_unknown: 'I don\'t know ⚪',
+    ai_muslim_accept: '✅ I understand and agree',
+    ai_muslim_contact_direct: '📩 Contact sheikh directly',
+    ai_listen_answer: '🔊 Listen to answer',
+    ai_contact_sheikh: '📩 Contact sheikh',
+    ai_ask_another: '❓ Another question',
+    ai_change_assistant: '🔄 Change assistant',
+    ai_contact_no: 'No thanks',
+    ai_scholar_menu: '🔙 Scholar menu',
+    ai_scholar_advanced: '❓ Advanced question',
+    ai_khutbah_write: '📝 Write Friday sermon',
+    ai_khutbah_translate: '🌍 Translate sermon',
+    ai_khutbah_improve: '✏️ Improve sermon',
+    ai_accept: '✅ Accept',
+    ai_decline: '❌ Decline',
+    dawah_menu: '🕊️ Daʿwah menu',
+    dawah_library: '📚 Daʿwah library',
+    dawah_videos: '🎥 Daʿwah videos',
+    vol_start_reg: '✅ Register as volunteer',
+    quran_menu: '📖 Quran menu'
+  },
+  tr: {
+    ai_muslim_start: '🕌 Dini Asistan',
+    ai_dawah_start: '🕊️ Hikmetle Davet',
+    ai_religion_muslim: 'Müslüman 🌙',
+    ai_muslim_accept: '✅ Anlıyorum ve kabul ediyorum',
+    ai_ask_another: '❓ Başka soru',
+    vol_start_reg: '✅ Gönüllü olarak kaydol',
+    quran_menu: '📖 Kuran menüsü'
+  },
+  fr: {
+    ai_muslim_start: '🕌 Assistant religieux',
+    ai_dawah_start: '🕊️ Invitation à la sagesse',
+    ai_religion_muslim: 'Musulman 🌙',
+    ai_muslim_accept: '✅ Je comprends et j\'accepte',
+    ai_ask_another: '❓ Autre question',
+    vol_start_reg: '✅ S\'inscrire comme bénévole',
+    quran_menu: '📖 Menu Coran'
+  }
+};
+
+function getInlineLabel(lang, callbackData) {
+  if (!callbackData || !lang || lang === 'ar') return null;
+  const base = callbackData.split(':')[0];
+  return INLINE_LABELS[lang]?.[base] || INLINE_LABELS[lang]?.[callbackData] || null;
+}
+
+module.exports = { INLINE_LABELS, getInlineLabel };

@@ -1,0 +1,15 @@
+[
+  {
+    "id": "ar.abdulbasetabdulsamad.warsh",
+    "name": "عبد الباسط عبد الصمد (ورش)",
+    "rewaya": "ورش",
+    "surahCdn": "app"
+  },
+  {
+    "id": "ar.muhammadanwarshahat",
+    "name": "محمد أنور الشحات (ورش)",
+    "rewaya": "ورش",
+    "blockedSurahs": [5],
+    "redirectTo": "ar.abdulbasetabdulsamad.warsh"
+  }
+]

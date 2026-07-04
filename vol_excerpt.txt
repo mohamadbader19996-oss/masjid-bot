@@ -1,0 +1,121 @@
+﻿    {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: buttons }
+    }
+  );
+}
+
+async function showVolunteerContactStep(ctx) {
+  await ctx.editMessageText(
+    '📱 *كيف تريد أن يتواصل معك الناس؟*\n\n' +
+    '👤 *Username تيليغرام* — يفتح محادثة مباشرة\n' +
+    '📱 *واتساب* — يفتح واتساب مباشرة\n' +
+    '🔒 *عبر البوت فقط* — تستقبل الطلبات هنا\n\n' +
+    '_يظهر للطرف الآخر فقط عند قبولك للطلب_',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '👤 Username تيليغرام', callback_data: 'vol_contact_username' }],
+          [{ text: '📱 رقم واتساب', callback_data: 'vol_contact_whatsapp' }],
+          [{ text: '🔒 عبر البوت فقط', callback_data: 'vol_contact_bot_only' }],
+          [{ text: '🔙 رجوع', callback_data: 'vol_avail_back' }]
+        ]
+      }
+    }
+  );
+}
+
+async function handleVolunteerContactChoice(ctx, type) {
+  await ctx.answerCbQuery();
+  const userId = ctx.from.id;
+  const db = loadDB();
+  if (!db.volunteer_reg) db.volunteer_reg = {};
+  if (!db.volunteer_reg[userId]) db.volunteer_reg[userId] = {};
+  db.volunteer_reg[userId].contactType = type;
+  saveDB(db);
+
+  if (type === 'bot_only') {
+    db.volunteer_reg[userId].contactValue = null;
+    saveDB(db);
+    await handleVolunteerSubmit(ctx);
+    return;
+  }
+
+  const prompts = {
+    username: '👤 *أرسل username تيليغرام الخاص بك*\n\nمثال: `@محمد_الدعوة`\n\n_بدون مسافات_',
+    whatsapp: '📱 *أرسل رقم واتساب الخاص بك*\n\nمثال: `+491234567890`\n\n_مع رمز الدولة_'
+  };
+
+  await ctx.editMessageText(
+    prompts[type],
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '🔙 رجوع', callback_data: 'vol_contact_step' }]
+        ]
+      }
+    }
+  );
+
+  db.volunteer_reg[userId].waitingForContact = true;
+  saveDB(db);
+}
+
+async function handleVolunteerContactInput(ctx) {
+  const userId = ctx.from.id;
+  const db = loadDB();
+  const reg = db.volunteer_reg?.[userId];
+  if (!reg?.waitingForContact) return false;
+
+  const input = ctx.message?.text?.trim();
+  if (!input) return false;
+
+  const type = reg.contactType;
+
+  if (type === 'username') {
+    const clean = input.startsWith('@') ? input : `@${input}`;
+    reg.contactValue = clean;
+    reg.waitingForContact = false;
+    saveDB(db);
+    await ctx.reply(
+      `✅ تم حفظ: ${clean}\nجاري إرسال طلب التطوع...`,
+      { parse_mode: 'Markdown' }
+    );
+    await handleVolunteerSubmit(ctx);
+    return true;
+  }
+
+  if (type === 'whatsapp') {
+    const digitsOnly = input.replace(/[^0-9]/g, '');
+    if (digitsOnly.length < 6) {
+      await ctx.reply(
+        '❌ الرقم قصير جداً — أرسل رقمك الكامل',
+        { parse_mode: 'Markdown' }
+      );
+      return true;
+    }
+
+    let waNumber = digitsOnly;
+    if (digitsOnly.startsWith('00')) {
+      waNumber = digitsOnly.slice(2);
+    }
+
+    reg.contactValue = waNumber;
+    reg.contactDisplay = input;
+    reg.waitingForContact = false;
+    saveDB(db);
+    await ctx.reply(
+      `✅ *تم حفظ رقم الواتساب*\n📱 ${input}`,
+      { parse_mode: 'Markdown' }
+    );
+    await handleVolunteerSubmit(ctx);
+    return true;
+  }
+
+  return false;
+}
+
+async function handleVolunteerAvailToggle(ctx, availKey) {
+  await ctx.answerCbQuery();

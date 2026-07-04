@@ -1,0 +1,67 @@
+{
+  "حفص": [
+    {
+      "id": "ar.husary",
+      "name": "محمود خليل الحصري",
+      "rewaya": "حفص",
+      "surahCdn": "app"
+    }
+  ],
+  "ورش": [
+    {
+      "id": "ar.abdulbasetabdulsamad.warsh",
+      "name": "عبد الباسط عبد الصمد (ورش)",
+      "rewaya": "ورش",
+      "surahCdn": "app"
+    },
+    {
+      "id": "ar.muhammadanwarshahat",
+      "name": "محمد أنور الشحات (ورش)",
+      "rewaya": "ورش",
+      "blockedSurahs": [5],
+      "redirectTo": "ar.abdulbasetabdulsamad.warsh"
+    }
+  ],
+  "قالون": [
+    {
+      "id": "ar.aliabdurrahmanalhuthaifyqaloon",
+      "name": "علي الحذيفي (قالون)",
+      "rewaya": "قالون"
+    }
+  ],
+  "الدوري": [
+    {
+      "id": "ar.abdurrasheedsufiaddoorianabiamr",
+      "name": "عبد الرشيد صوفي (الدوري)",
+      "rewaya": "الدوري"
+    },
+    {
+      "id": "ar.noreensiddiq.addoori",
+      "name": "نورين محمد صديق (الدوري)",
+      "rewaya": "الدوري",
+      "surahCdn": "app"
+    }
+  ],
+  "شعبة": [
+    {
+      "id": "ar.abdurrasheedsufishubahanasim",
+      "name": "عبد الرشيد صوفي (شعبة)",
+      "rewaya": "شعبة"
+    }
+  ],
+  "السوسي": [
+    {
+      "id": "ar.abdurrasheedsufisoosi",
+      "name": "عبد الرشيد صوفي (السوسي)",
+      "rewaya": "السوسي"
+    }
+  ],
+  "خلف": [
+    {
+      "id": "ar.abdurrashidsufi.khalaf",
+      "name": "عبد الرشيد صوفي (خلف)",
+      "rewaya": "خلف",
+      "surahCdn": "app"
+    }
+  ]
+}

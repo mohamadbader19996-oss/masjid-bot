@@ -1,14 +1,18 @@
 const db = require('../database');
-
-const PRAYER_ICONS = ['🌙', '☀️', '🌤️', '🌇', '🌑'];
-const PRAYER_NAMES = ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
-const PRAYER_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+const fs = require('fs');
+const {
+  PRAYER_ICONS,
+  PRAYER_NAMES,
+  PRAYER_KEYS,
+  getMosqueForCtx
+} = require('../services/prayerTimes');
+const { renderPrayerTimesCard } = require('../services/prayerCardRenderer');
 
 async function showPrayerTimes(ctx) {
-  const mosque = db.firstMosque();
+  const mosque = getMosqueForCtx(ctx);
 
   if (!mosque) {
-    return ctx.reply('⚠️ لم يتم إضافة مسجد بعد.');
+    return ctx.reply('⚠️ لم يتم ربطك بمسجد بعد.');
   }
 
   const t = mosque.prayerTimes;
@@ -16,14 +20,21 @@ async function showPrayerTimes(ctx) {
     return ctx.reply('⚠️ لم يتم تحديد مواقيت الصلاة بعد.\nيرجى التواصل مع المسؤول.');
   }
 
-  const lines = PRAYER_KEYS.map((key, i) =>
-    `${PRAYER_ICONS[i]} ${PRAYER_NAMES[i]}: *${t[key]}*`
-  ).join('\n');
+  const waitMsg = await ctx.reply('⏳ جارٍ تجهيز بطاقة المواقيت...');
 
-  await ctx.reply(
-    `📅 *مواقيت الصلاة*\n🕌 ${mosque.name}\n\n${lines}`,
-    { parse_mode: 'Markdown' }
-  );
+  try {
+    const cardPath = await renderPrayerTimesCard(mosque);
+    await ctx.telegram.deleteMessage(ctx.chat.id, waitMsg.message_id).catch(() => {});
+    await ctx.replyWithPhoto(
+      { source: cardPath },
+      { caption: `📅 مواقيت الصلاة — ${mosque.name}` }
+    );
+    fs.unlink(cardPath, () => {});
+  } catch (err) {
+    console.error('[prayerCard]', err.message);
+    await ctx.telegram.deleteMessage(ctx.chat.id, waitMsg.message_id).catch(() => {});
+    await ctx.reply('⚠️ تعذّر تجهيز بطاقة المواقيت، حاول لاحقاً.');
+  }
 }
 
 async function showAnnouncements(ctx) {
@@ -59,10 +70,10 @@ async function showLessons(ctx) {
 }
 
 async function showMosqueInfo(ctx) {
-  const mosque = db.firstMosque();
+  const mosque = getMosqueForCtx(ctx);
 
   if (!mosque) {
-    return ctx.reply('🕌 لم يتم إضافة معلومات المسجد بعد.');
+    return ctx.reply('⚠️ لم يتم ربطك بمسجد بعد.');
   }
 
   let msg = `🕌 *معلومات المسجد*\n\n📛 *الاسم:* ${mosque.name}\n📍 *الموقع:* ${mosque.location || "غير محدد"}`;
@@ -70,7 +81,7 @@ async function showMosqueInfo(ctx) {
   const t = mosque.prayerTimes;
   if (t?.fajr) {
     const lines = PRAYER_KEYS.map((key, i) =>
-      `${PRAYER_ICONS[i]} ${PRAYER_NAMES[i]}: ${t[key]}`
+      `${PRAYER_ICONS[i]} ${PRAYER_NAMES[i]}: ${t[key] || '—'}`
     ).join('\n');
     msg += `\n\n📅 *مواقيت الصلاة:*\n${lines}`;
   }
@@ -78,7 +89,12 @@ async function showMosqueInfo(ctx) {
   await ctx.reply(msg, { parse_mode: 'Markdown' });
 }
 
-module.exports = { showPrayerTimes, showAnnouncements, showLessons, showMosqueInfo };
+module.exports = {
+  showPrayerTimes,
+  showAnnouncements,
+  showLessons,
+  showMosqueInfo
+};
 
 const registry = require('../core/actionRegistry');
 

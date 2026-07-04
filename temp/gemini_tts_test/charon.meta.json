@@ -1,0 +1,11 @@
+{
+  "mimeType": "audio/L16;codec=pcm;rate=24000",
+  "byteLength": 113806,
+  "inlineDataKeys": [
+    "mimeType",
+    "data"
+  ],
+  "rawPartKeys": [
+    "inlineData"
+  ]
+}

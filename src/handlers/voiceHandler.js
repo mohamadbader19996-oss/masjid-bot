@@ -11,7 +11,8 @@ const {
   answerKeyboard,
   geminiErrorMessage,
   isNonReligiousAnswer,
-  NON_RELIGIOUS_REPLY
+  NON_RELIGIOUS_REPLY,
+  splitReply
 } = require('./ai');
 
 async function downloadTelegramAudio(ctx, fileId) {
@@ -71,20 +72,6 @@ function resolveVoiceContext(ctx, user) {
   }
 
   return { systemInstruction, voicePrompt, mode };
-}
-
-async function splitReply(ctx, text, extra) {
-  const maxLen = 4000;
-  if (text.length <= maxLen) return ctx.reply(text, extra);
-  const parts = [];
-  let remaining = text;
-  while (remaining.length > 0) {
-    parts.push(remaining.slice(0, maxLen));
-    remaining = remaining.slice(maxLen);
-  }
-  for (let i = 0; i < parts.length; i++) {
-    await ctx.reply(parts[i], i === parts.length - 1 ? extra : undefined);
-  }
 }
 
 async function sendScholarVoiceAnswer(ctx, answer) {
@@ -166,4 +153,4 @@ function register(registry) {
   registry.registerAction('analyze_voice_now', analyzeVoiceNow, 'تحليل رسالة صوتية');
 }
 
-module.exports = { register, handleVoiceQuestion, analyzeVoiceNow };
+module.exports = { register, handleVoiceQuestion, analyzeVoiceNow, downloadTelegramAudio };

@@ -2,7 +2,7 @@ const { Markup } = require('telegraf');
 const db = require('../database');
 const https = require('https');
 const geminiService = require('../services/gemini');
-const { buildSystemPrompt, saveLastAiResponse, listenAnswerKeyboard } = require('./ai');
+const { buildSystemPrompt, saveLastAiResponse, listenAnswerKeyboard, aiAnswerExtra } = require('./ai');
 const { ROLES } = require('../keyboards');
 
 function cleanFormat(text) {
@@ -13,9 +13,10 @@ function cleanFormat(text) {
 async function splitReply(ctx, text, extra) {
   const maxLen = 4000;
   const header = '🖼️ *تحليل الصورة:*\n\n';
-  const full = header + text;
-  if (full.length <= maxLen) {
-    return ctx.reply(full, extra);
+  const outExtra = aiAnswerExtra(extra);
+  if ((header + text).length <= maxLen) {
+    await ctx.reply(header, { parse_mode: 'Markdown' });
+    return ctx.reply(text, outExtra);
   }
   await ctx.reply(header, { parse_mode: 'Markdown' });
   let remaining = text;
@@ -25,7 +26,7 @@ async function splitReply(ctx, text, extra) {
     remaining = remaining.slice(maxLen);
   }
   for (let i = 0; i < parts.length; i++) {
-    await ctx.reply(parts[i], i === parts.length - 1 ? extra : undefined);
+    await ctx.reply(parts[i], i === parts.length - 1 ? outExtra : aiAnswerExtra());
   }
 }
 

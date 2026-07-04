@@ -20,30 +20,48 @@ const MESSAGES_BUTTON = '📬 الرسائل';
 
 // أزرار القائمة حسب الدور — المساعد الديني في صف مستقل ليظهر على جميع الشاشات
 const BASE_BUTTONS = [
-  ['🤖 المساعد الديني'],
+  ['🕌 المساعد الديني', '🕊️ القسم الدعوي'],
+  ['🤝 تطوع دعوي', '🎙️ تطوع للتسميع والتصحيح'],
   ['📅 مواقيت الصلاة', '📢 الإعلانات'],
+  ['🔔 إشعار الأذان', '📅 التقويم الهجري'],
   ['📚 الدروس', '🕌 معلومات المسجد'],
   ['❓ إرسال سؤال', '🆘 طلب مساعدة'],
-  ['📖 القرآن الكريم']
+  ['📖 القرآن الكريم', '📩 تقديم شكوى أو اقتراح'],
+  ['🛡️ حصن المسلم'],
+  ['💬 أقوال وحكم'],
+  ['🕊️ أسماء الله الحسنى'],
+  ['📜 قسم الحديث', '🙏 سبحة'],
+  ['📨 دعوة'],
+  ['🏠 الرئيسية']
 ];
 
 const SHEIKH_BUTTONS = [
   ['📝 إضافة درس', '💬 الأسئلة الواردة'],
   ['📖 لوحة الشيخ', MESSAGES_BUTTON],
+  ['🆘 طلبات المساعدة'],
   [AI_SHEIKH_BUTTON]
 ];
 
 const ADMIN_BUTTONS = [
   ['⏰ تحديث مواقيت الصلاة', '📢 إضافة إعلان'],
-  ['🔐 لوحة التحكم', '👥 قائمة المستخدمين']
+  ['🔐 لوحة التحكم', '👥 قائمة المستخدمين'],
+  ['🆘 طلبات المساعدة']
 ];
 
 const DEVELOPER_BUTTONS = [
   ['👑 إدارة الأدوار', '📊 إحصائيات'],
   ['📡 رسالة جماعية', '📣 إعلان عام'],
   ['🕌 إضافة مسجد', '🕌 قائمة المساجد'],
-  ['❄️ تفعيل/تجميد مسجد', '🗑️ حذف مسجد']
+  ['❄️ تفعيل/تجميد مسجد', '🗑️ حذف مسجد'],
+  ['🪪 دعوة مشرف إقليمي', '📊 المشرفون والمساجد'],
+  ['🪪 ترشيح مشرف جديد'],
+  ['📊 إحصائيات النظام', '🗂️ الأرشيف الإقليمي'],
+  ['🌍 الدول الأكثر مساجد', '📊 إحصائيات الأزرار الرئيسية'],
+  ['🎥 مراجعة فيديوهات التعليم', '🎬 مراجعة مناظرات إقليمية'],
+  ['💚 مراجعة قصص الاعتناق']
 ];
+
+const DAWAH_DEBATES_BUTTON = '📺 مناظرات دعوية';
 
 const WORSHIPPER_BUTTONS = [
   ['🎓 أنا عالم']
@@ -57,7 +75,7 @@ const SCHOLAR_BUTTONS = [
 
 const MODERATOR_BUTTONS = [
   ['📋 طلبات العلماء', '🕌 طلبات المساجد'],
-  ['📊 إحصائيات المشرف']
+  ['📊 إحصائيات المشرف', '🪪 ترشيح مشرف جديد']
 ];
 
 function mainKeyboard(role) {
@@ -81,7 +99,7 @@ function mainKeyboard(role) {
   if (role === ROLES.DEVELOPER) {
     rows = [...rows, ...WORSHIPPER_BUTTONS, ...SCHOLAR_BUTTONS];
   }
-  if (role === 'MODERATOR') {
+  if (role === 'MODERATOR' || role === 'moderator') {
     rows = [...rows, ...MODERATOR_BUTTONS];
   }
   if (role === 'developer' || role === 'DEVELOPER') {
@@ -109,11 +127,19 @@ const CANCEL_BUTTON = '❌ إلغاء';
 
 const NAV_COMMANDS = new Set(['/start', '/menu', '/cancel', '/help']);
 
+const LEGACY_MENU_ALIASES = {
+  '📿 سبحة': '🙏 سبحة'
+};
+
+function normalizeMenuButton(text) {
+  return typeof text === 'string' ? (LEGACY_MENU_ALIASES[text] || text) : text;
+}
+
 const FLOW_SESSION_KEYS = [
   'aiMode', 'aiSetupStep', 'aiMadhabSelection', 'aiSectSelection', 'aiWaitingCity',
   'aiScholarContext', 'aiScholarAdvancedMode',
   'aiKhutbahMode', 'aiKhutbahStep', 'aiTargetLanguage',
-  'searchingQuran', 'quranAyahPrompt', 'quranHafizMode',
+  'searchingQuran', 'searchingSurahName', 'hafizPagePrompt', 'mushafPagePrompt', 'quranAyahPrompt', 'quranHafizMode',
   'addingSheikh', 'addingSheikhSpecialty', 'addingSheikhPhone', 'sheikhData',
   'settingIBAN', 'settingPayPal', 'answeringSecretQuestion',
   'addingCircle', 'addingCircleSchedule', 'addingCircleTopic', 'circleData',
@@ -121,7 +147,7 @@ const FLOW_SESSION_KEYS = [
 ];
 
 function isMenuButton(text) {
-  return typeof text === 'string' && MENU_BUTTONS.has(text);
+  return typeof text === 'string' && MENU_BUTTONS.has(normalizeMenuButton(text));
 }
 
 function isNavMessage(text) {
@@ -141,7 +167,13 @@ function hasActiveFlow(ctx) {
 
 function clearFlowSession(ctx) {
   const userRole = ctx.session?.userRole;
+  const uiButtonMap = ctx.session?.uiButtonMap;
+  const uiLang = ctx.session?.uiLang || ctx.user?.uiLang;
   ctx.session = userRole ? { userRole } : {};
+  if (uiLang) ctx.session.uiLang = uiLang;
+  if (uiButtonMap && Object.keys(uiButtonMap).length) {
+    ctx.session.uiButtonMap = uiButtonMap;
+  }
 }
 
 async function resetUserState(ctx) {
@@ -155,13 +187,18 @@ async function resetUserState(ctx) {
 }
 
 module.exports = {
+  DAWAH_DEBATES_BUTTON,
   ROLES,
   ROLE_LABELS,
   AI_BUTTON,
   AI_SHEIKH_BUTTON,
   MESSAGES_BUTTON,
+  BASE_BUTTONS,
+  BASE_MENU_BUTTONS: new Set(BASE_BUTTONS.flat()),
   CANCEL_BUTTON,
   NAV_COMMANDS,
+  LEGACY_MENU_ALIASES,
+  normalizeMenuButton,
   MENU_BUTTONS,
   mainKeyboard,
   cancelKeyboard,

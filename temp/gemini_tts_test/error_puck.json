@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": 400,
+    "message": "Model tried to generate text, but it should only be used for TTS. Make sure your instructions are clear to only generate audio from a given text transcript.",
+    "status": "INVALID_ARGUMENT"
+  }
+}

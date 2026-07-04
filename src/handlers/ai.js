@@ -3,6 +3,8 @@ const axios = require('axios');
 const db = require('../database');
 const { mainKeyboard, ROLES, CANCEL_BUTTON } = require('../keyboards');
 const geminiService = require('../services/gemini');
+const qaCache = require('../services/qaCache');
+const { getUserLangCode } = require('../services/uiTranslate');
 
 const PHOTO_VISION_SYSTEM =
   'أنت مساعد ديني إسلامي متخصص.\n' +
@@ -126,15 +128,13 @@ function buildSystemPrompt(user, role, options = {}) {
 
   if (religion === RELIGIONS.MUSLIM) {
     prompt =
-      'أنت مساعد إسلامي للبحث الشرعي.\n' +
-      'قواعد:\n' +
-      '1. أجب على كل سؤال ديني بإجابة مفيدة مع الأدلة من القرآن والسنة الصحيحة\n' +
-      `2. فقط إذا كان السؤال غير ديني تماماً (مثل الطبخ أو الرياضة) قل بالضبط: '${NON_RELIGIOUS_REPLY}'\n` +
-      `3. إذا كان السؤال عن طلاق أو ميراث أو عقود معقدة قل بالضبط: '${PROHIBITED_TOPIC_REPLY}'\n` +
-      `4. إذا لم تجد دليلاً واضحاً اذكر ذلك وقل: '${NO_EVIDENCE_REPLY}'\n` +
-      '5. رد بنفس لغة المستخدم تلقائياً\n' +
-      `6. المذهب المختار: ${madhabLabel}\n` +
-      `${geminiService.MUSLIM_FORMAT_PROMPT_RULE}\n`;
+      geminiService.MAIN_SYSTEM_PROMPT +
+      `\nالمذهب المختار: ${madhabLabel}\n` +
+      `${geminiService.MUSLIM_FORMAT_PROMPT_RULE}\n` +
+      'قاعدة اللغة الإلزامية (لا استثناء):\n' +
+      'رد دائماً بنفس لغة سؤال المستخدم تماماً — أياً كانت لغته (عربي، ألماني، تركي، إنجليزي، أو أي لغة أخرى في العالم).\n' +
+      'لا تطلب من المستخدم أبداً إعادة كتابة سؤاله بالعربية، ولا تقل له أن سؤاله "مكتوب بلغة أجنبية".\n' +
+      'إن كان الدليل (آية أو حديث) بالعربية أصلاً، اكتبه بالعربية كما هو ثم أضف ترجمة مختصرة له مباشرة بلغة سؤال المستخدم، ثم اشرح الإجابة كاملة بلغة سؤال المستخدم.\n';
   } else if (religion === RELIGIONS.CHRISTIAN) {
     prompt +=
       `7. المستخدم مسيحي — طائفته: ${sectLabel}\n` +
@@ -169,6 +169,21 @@ function buildSystemPrompt(user, role, options = {}) {
 function religionKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('مسلم 🌙', 'ai_religion_muslim')],
+    [Markup.button.callback('مسيحي ✝️', 'ai_religion_christian')],
+    [Markup.button.callback('يهودي ✡️', 'ai_religion_jewish')],
+    [Markup.button.callback('غير متدين 🤔', 'ai_religion_secular')]
+  ]);
+}
+
+function assistantEntryKeyboard() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('🕌 المساعد الديني', 'ai_muslim_start')],
+    [Markup.button.callback('🕊️ الدعوة بالحكمة', 'ai_dawah_start')]
+  ]);
+}
+
+function dawahReligionKeyboard() {
+  return Markup.inlineKeyboard([
     [Markup.button.callback('مسيحي ✝️', 'ai_religion_christian')],
     [Markup.button.callback('يهودي ✡️', 'ai_religion_jewish')],
     [Markup.button.callback('غير متدين 🤔', 'ai_religion_secular')]
@@ -233,7 +248,16 @@ function answerKeyboard(religion) {
       ]
     : [Markup.button.callback('❓ سؤال آخر', 'ai_ask_another')];
 
-  return listenAnswerKeyboard([row1]);
+  return listenAnswerKeyboard([
+    row1,
+    [Markup.button.callback('🔄 تغيير المساعد', 'ai_change_assistant')]
+  ]);
+}
+
+function promptQuestionKeyboard() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('🔄 تغيير المساعد', 'ai_change_assistant')]
+  ]);
 }
 
 function contactPromptKeyboard(religion) {
@@ -334,10 +358,11 @@ function enterAiMode(ctx) {
   ctx.session.aiMode = true;
 }
 
-async function splitReply(ctx, text, extra) {
+async function splitReply(ctx, text, extra, translateMessage = false) {
   const maxLen = 4000;
+  const outExtra = translateMessage ? extra : aiAnswerExtra(extra);
   if (text.length <= maxLen) {
-    return ctx.reply(text, extra);
+    return ctx.reply(text, outExtra);
   }
   const parts = [];
   let remaining = text;
@@ -345,9 +370,14 @@ async function splitReply(ctx, text, extra) {
     parts.push(remaining.slice(0, maxLen));
     remaining = remaining.slice(maxLen);
   }
+  const partExtra = aiAnswerExtra();
   for (let i = 0; i < parts.length; i++) {
-    await ctx.reply(parts[i], i === parts.length - 1 ? extra : undefined);
+    await ctx.reply(parts[i], i === parts.length - 1 ? outExtra : partExtra);
   }
+}
+
+function aiAnswerExtra(extra) {
+  return { ...(extra || {}), skipTextTranslation: true };
 }
 
 function ensureKhutbahWarning(text) {
@@ -431,9 +461,9 @@ async function replyMuslimAnswer(ctx, answer) {
   const text = prepareMuslimAnswer(answer);
   const extra = answerKeyboard(RELIGIONS.MUSLIM);
   try {
-    await splitReply(ctx, text, { parse_mode: 'Markdown', ...extra });
+    await splitReply(ctx, text, { parse_mode: 'Markdown', ...extra }, true);
   } catch {
-    await splitReply(ctx, text, extra);
+    await splitReply(ctx, text, extra, true);
   }
 }
 
@@ -463,19 +493,70 @@ function geminiErrorMessage(err) {
   if (parsed.type === 'model') {
     return '❌ نماذج Gemini غير متاحة حالياً. حاول بعد قليل.';
   }
+  if (/message is too long/i.test(msg)) {
+    return '❌ الإجابة طويلة جداً لتيليغرام. حاول سؤالاً أقصر أو أعد المحاولة.';
+  }
   console.error('[Gemini] خطأ غير مصنّف:', msg);
   return '❌ حدث خطأ أثناء الاتصال بالمساعد. حاول لاحقاً.';
 }
 
+function logQaDebug(phase, details = {}) {
+  console.log(`[QA Debug] ${phase}`, JSON.stringify(details));
+}
+
 async function askGemini(question, user, role, options = {}) {
-  const mode = options.khutbahMode
-    ? `khutbah_${options.khutbahMode}`
-    : (options.scholarAdvanced ? 'scholar_advanced' : 'general');
+  const mode = qaCache.resolveQaMode(options);
+  const skipCache = options.skipQaCache === true;
+  const sensitive = geminiService.isSensitiveQuestion(question);
+
+  logQaDebug('askGemini:start', {
+    question: String(question).slice(0, 120),
+    userId: user?.id,
+    religion: user?.religion,
+    madhab: user?.madhab,
+    sect: user?.sect,
+    mode,
+    sensitive,
+    skipCache
+  });
+
+  if (skipCache) {
+    logQaDebug('askGemini:cache-skipped', { reason: 'skipQaCache option' });
+  } else if (sensitive) {
+    logQaDebug('askGemini:cache-skipped', { reason: 'sensitive question' });
+  } else {
+    const cached = qaCache.getCachedQaAnswer(question, user, options);
+    if (cached) {
+      console.log(`[QA Cache] hit mode=${mode} user=${user?.id || '?'}`);
+      logQaDebug('askGemini:cache-hit', { mode, answerLen: cached.length });
+      return cached;
+    }
+    logQaDebug('askGemini:cache-miss', { mode });
+  }
+
+  logQaDebug('askGemini:gemini-call', { mode });
   const { text } = await geminiService.askGemini(
     question,
     buildSystemPrompt(user, role, options),
     { userId: user?.id, mode }
   );
+
+  if (!text) {
+    logQaDebug('askGemini:save-blocked', { reason: 'empty Gemini response' });
+    return text;
+  }
+
+  if (skipCache) {
+    logQaDebug('askGemini:save-blocked', { reason: 'skipQaCache option' });
+  } else if (sensitive) {
+    logQaDebug('askGemini:save-blocked', { reason: 'sensitive question' });
+  } else {
+    logQaDebug('askGemini:save-attempt', { mode, answerLen: text.length });
+    qaCache.saveQaCacheAnswer(question, user, options, text);
+    console.log(`[QA Cache] saved mode=${mode} user=${user?.id || '?'}`);
+    logQaDebug('askGemini:save-done', { mode });
+  }
+
   return text;
 }
 
@@ -486,10 +567,13 @@ function isAllowedQuestion(text) {
 async function showReligionSelection(ctx) {
   clearRegularAiSession(ctx);
   enterAiSetup(ctx, 'religion');
-  await ctx.reply(
-    '🌟 أهلاً بك - من أنت؟',
-    religionKeyboard()
-  );
+  await ctx.reply('🌟 أهلاً بك - ماذا تريد؟', assistantEntryKeyboard());
+}
+
+async function showDawahReligionSelection(ctx) {
+  clearRegularAiSession(ctx);
+  enterAiSetup(ctx, 'religion');
+  await ctx.reply('🕊️ *الدعوة بالحكمة*\n\n🌟 من تدعو؟', { parse_mode: 'Markdown', ...dawahReligionKeyboard() });
 }
 
 async function showMuslimGuidelines(ctx) {
@@ -541,7 +625,8 @@ async function promptQuestion(ctx) {
   else if (user?.religion === RELIGIONS.MUSLIM) hint = 'اكتب سؤالك الديني أو أرسل رسالة صوتية 🎤';
 
   await ctx.reply(
-    `${hint}:\n\n(أرسل ${CANCEL_BUTTON} للخروج)`
+    `${hint}:\n\n(أرسل ${CANCEL_BUTTON} للخروج)`,
+    promptQuestionKeyboard()
   );
 }
 
@@ -637,6 +722,27 @@ async function aiMenu(ctx) {
   return promptQuestion(ctx);
 }
 
+async function handleMuslimStart(ctx) {
+  await ctx.answerCbQuery();
+  const prev = ctx.user?.religion;
+  const updates = { religion: RELIGIONS.MUSLIM };
+  if (prev !== RELIGIONS.MUSLIM) {
+    updates.muslimGuidelinesAccepted = false;
+    updates.sect = undefined;
+  }
+  db.saveUser(ctx.from.id, updates);
+  ctx.user = db.getUser(ctx.from.id);
+  clearAiSetup(ctx);
+  await ctx.reply(`✅ تم الحفظ: *${RELIGION_LABELS.muslim}*`, { parse_mode: 'Markdown' });
+  return continueMuslimSetup(ctx);
+}
+
+// الدعوة بالحكمة — نفس منطق الأديان الأخرى الموجود حالياً
+async function handleDawahStart(ctx) {
+  await ctx.answerCbQuery();
+  return showDawahReligionSelection(ctx);
+}
+
 async function handleReligionSelect(ctx) {
   await ctx.answerCbQuery();
   const religion = ctx.match[1];
@@ -726,6 +832,23 @@ async function handleDecline(ctx) {
   await ctx.answerCbQuery();
   clearAiSession(ctx);
   await ctx.reply('تم الإلغاء.', mainKeyboard(ctx.user?.role || ROLES.WORSHIPPER));
+}
+
+async function handleChangeAssistant(ctx) {
+  await ctx.answerCbQuery('✅ تم إعادة الضبط');
+  clearAiSession(ctx);
+  clearRegularAiSession(ctx);
+  const user = db.getUser(ctx.from.id);
+  if (user) {
+    db.saveUser(ctx.from.id, {
+      religion: null,
+      madhab: null,
+      sect: null,
+      muslimGuidelinesAccepted: false
+    });
+    ctx.user = db.getUser(ctx.from.id);
+  }
+  return showReligionSelection(ctx);
 }
 
 async function handleScholarMenu(ctx) {
@@ -964,17 +1087,33 @@ function isProhibitedMuslimTopic(text) {
 }
 
 async function handleAiQuestion(ctx, text) {
+  const sensitive = geminiService.isSensitiveQuestion(text);
+  logQaDebug('handleAiQuestion:start', {
+    userId: ctx.from?.id,
+    text: String(text).slice(0, 120),
+    sensitive,
+    aiMode: Boolean(ctx.session?.aiMode),
+    scholarAdvanced: Boolean(ctx.session?.aiScholarAdvancedMode),
+    khutbahMode: ctx.session?.aiKhutbahMode || null
+  });
+
   if (text === CANCEL_BUTTON) {
+    logQaDebug('handleAiQuestion:stop', { reason: 'cancel button' });
     clearAiSession(ctx);
     return ctx.reply('✅ تم الخروج من المساعد الديني.', mainKeyboard(ctx.user?.role || ROLES.WORSHIPPER));
   }
 
-  if (ctx.session.aiWaitingCity) return handleCityInput(ctx, text);
+  if (ctx.session.aiWaitingCity) {
+    logQaDebug('handleAiQuestion:stop', { reason: 'aiWaitingCity → handleCityInput' });
+    return handleCityInput(ctx, text);
+  }
 
   if (ctx.session.aiKhutbahMode) {
     if (!ctx.session.aiScholarContext) {
+      logQaDebug('handleAiQuestion:stop', { reason: 'khutbah without scholar context' });
       return ctx.reply('⛔ أدوات الخطبة متاحة فقط من المساعد الديني للمشايخ.');
     }
+    logQaDebug('handleAiQuestion:route', { path: 'processKhutbahInput' });
     return processKhutbahInput(ctx, text);
   }
 
@@ -982,6 +1121,7 @@ async function handleAiQuestion(ctx, text) {
   const role = user?.role || ROLES.WORSHIPPER;
 
   if (user?.religion === RELIGIONS.MUSLIM && isProhibitedMuslimTopic(text)) {
+    logQaDebug('handleAiQuestion:stop', { reason: 'prohibited muslim topic' });
     ctx.session.aiLastQuestion = text;
     saveLastAiResponse(ctx, PROHIBITED_TOPIC_REPLY);
     await replyMuslimAnswer(ctx, PROHIBITED_TOPIC_REPLY);
@@ -989,6 +1129,7 @@ async function handleAiQuestion(ctx, text) {
   }
 
   if (!isAllowedQuestion(text)) {
+    logQaDebug('handleAiQuestion:stop', { reason: 'non-religious question filter' });
     if (ctx.session.aiScholarContext) {
       await ctx.reply(NON_RELIGIOUS_REPLY, scholarAnswerKeyboard());
       return;
@@ -1001,6 +1142,7 @@ async function handleAiQuestion(ctx, text) {
     return;
   }
 
+  logQaDebug('handleAiQuestion:route', { path: 'askGemini', role, religion: user?.religion, madhab: user?.madhab });
   const waitMsg = await ctx.reply('⏳ جاري البحث عن الدليل...');
 
   try {
@@ -1031,8 +1173,11 @@ async function handleAiQuestion(ctx, text) {
     }
 
     await sendAnswerWithFollowUp(ctx, answer, user);
+    logQaDebug('handleAiQuestion:done', { path: 'sendAnswerWithFollowUp', answerLen: answer?.length || 0 });
   } catch (err) {
+    logQaDebug('handleAiQuestion:error', { message: err?.message || String(err) });
     console.error('[AI] handleAiQuestion:', err?.message || err);
+    if (err?.stack) console.error(err.stack);
     try { await ctx.telegram.deleteMessage(ctx.chat.id, waitMsg.message_id); } catch (e) {}
     await ctx.reply(geminiErrorMessage(err));
   }
@@ -1187,9 +1332,13 @@ async function handleListenAnswer(ctx) {
     await ttsService.speakArabicText(ctx, cleanText);
   } catch (error) {
     console.error('TTS Error:', error?.message || error);
+    await ctx.reply('🔊 *نص الإجابة للقراءة:*', { parse_mode: 'Markdown' });
     await ctx.reply(
-      '🔊 *نص الإجابة للقراءة:*\n\n' + cleanText.substring(0, 300),
-      { parse_mode: 'Markdown', ...answerKeyboard(ctx.user?.religion || RELIGIONS.MUSLIM) }
+      cleanText.substring(0, 300),
+      aiAnswerExtra({
+        parse_mode: 'Markdown',
+        ...answerKeyboard(ctx.user?.religion || RELIGIONS.MUSLIM)
+      })
     );
   }
 }
@@ -1229,6 +1378,7 @@ async function handleAiSetupText(ctx) {
 module.exports = {
   aiMenu,
   aiScholarMenu,
+  handleMuslimStart,
   handleMuslimAccept,
   handleMuslimContactDirect,
   handleAccept,
@@ -1254,9 +1404,13 @@ module.exports = {
   handleFindScholarRequest,
   handleContactNo,
   buildSystemPrompt,
+  askGemini,
   getMosqueSheikhs,
   saveLastAiResponse,
   replyAiAnswer,
+  splitReply,
+  sendAnswerWithFollowUp,
+  aiAnswerExtra,
   listenAnswerKeyboard,
   answerKeyboard,
   geminiErrorMessage,
@@ -1269,9 +1423,13 @@ const registry = require('../core/actionRegistry');
 const { AI_BUTTON } = require('../keyboards');
 
 registry.registerMenu(AI_BUTTON, aiMenu, 'المساعد الديني');
+registry.registerMenu('🕌 المساعد الديني', aiMenu, 'المساعد الديني');
 
 registry.registerAction('ai_accept', handleAccept, 'قبول شروط المساعد');
 registry.registerAction('ai_decline', handleDecline, 'رفض شروط المساعد');
+registry.registerAction('ai_change_assistant', handleChangeAssistant, 'تغيير المساعد');
+registry.registerAction('ai_muslim_start', handleMuslimStart, 'المساعد الديني للمسلم');
+registry.registerAction('ai_dawah_start', handleDawahStart, 'الدعوة بالحكمة');
 registry.registerAction('ai_muslim_accept', handleMuslimAccept, 'قبول الضوابط الشرعية');
 registry.registerAction('ai_muslim_contact_direct', handleMuslimContactDirect, 'تواصل مباشر مع شيخ');
 registry.registerAction(/^ai_religion_(.+)$/, handleReligionSelect, 'اختيار الدين');

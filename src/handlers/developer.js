@@ -1,4 +1,5 @@
 const db = require('../database');
+const { Markup } = require('telegraf');
 const { ROLES } = require('../keyboards');
 
 async function ensureDeveloper(ctx) {
@@ -43,7 +44,14 @@ async function listMosques(ctx) {
     return `• *${mosque.name || 'مسجد'}* [${mosque.id}]\n  📍 ${mosque.location || 'غير محدد'}\n  الحالة: ${status}`;
   });
 
-  await ctx.reply(`🕌 *قائمة المساجد المسجلة*\n\n${lines.join('\n\n')}`, { parse_mode: 'Markdown' });
+  const buttons = mosques.map((mosque) => [
+    Markup.button.callback(`🕌 ${mosque.name || mosque.id}`, `manage_mosque_${mosque.id}`)
+  ]);
+
+  await ctx.reply(
+    `🕌 *قائمة المساجد المسجلة*\n\n${lines.join('\n\n')}\n\nاضغط على مسجد لإدارته:`,
+    { parse_mode: 'Markdown', ...Markup.inlineKeyboard(buttons) }
+  );
 }
 
 async function enterToggleMosque(ctx) {
@@ -77,3 +85,12 @@ registry.registerMenu('📣 إعلان عام', broadcastAnnouncement, 'إعلا
 registry.registerMenu('🕌 قائمة المساجد', listMosques, 'قائمة المساجد');
 registry.registerMenu('❄️ تفعيل/تجميد مسجد', enterToggleMosque, 'تفعيل/تجميد مسجد');
 registry.registerMenu('🗑️ حذف مسجد', enterDeleteMosque, 'حذف مسجد');
+
+registry.register('dev_panel', async (ctx) => {
+  await ctx.answerCbQuery().catch(() => {});
+  if (!await ensureDeveloper(ctx)) return;
+  await ctx.editMessageText(
+    '🛡️ *لوحة المطور*\n\nاستخدم أزرار القائمة الرئيسية.',
+    { parse_mode: 'Markdown' }
+  ).catch(() => showStats(ctx));
+}, 'لوحة المطور');

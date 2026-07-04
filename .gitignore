@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+BOT_TOKEN=*.txt
+BOT_TOKEN*.txt
 
 # Dependencies
 node_modules/
@@ -17,3 +19,9 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# QCF4 cached assets (downloaded on first use)
+data/qcf4/
+data/mushaf-pages/
+fonts/qcf4/
+temp/mushaf/

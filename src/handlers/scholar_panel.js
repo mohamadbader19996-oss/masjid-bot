@@ -4,7 +4,7 @@ const db = require('../database');
 
 const geminiService = require('../services/gemini');
 
-const { buildSystemPrompt, saveLastAiResponse, listenAnswerKeyboard } = require('./ai');
+const { buildSystemPrompt, saveLastAiResponse, listenAnswerKeyboard, splitReply } = require('./ai');
 
 
 
@@ -19,38 +19,6 @@ async function ackCallback(ctx) {
 function canAccess(user) {
 
   return user && (user.role === 'SCHOLAR' || user.role === 'developer');
-
-}
-
-
-
-async function splitReply(ctx, text, extra) {
-
-  const maxLen = 4000;
-
-  if (text.length <= maxLen) {
-
-    return ctx.reply(text, extra);
-
-  }
-
-  const parts = [];
-
-  let remaining = text;
-
-  while (remaining.length > 0) {
-
-    parts.push(remaining.slice(0, maxLen));
-
-    remaining = remaining.slice(maxLen);
-
-  }
-
-  for (let i = 0; i < parts.length; i++) {
-
-    await ctx.reply(parts[i], i === parts.length - 1 ? extra : undefined);
-
-  }
 
 }
 

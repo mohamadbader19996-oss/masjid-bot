@@ -1,0 +1,131 @@
+{
+  "hafs": [
+    {
+      "id": "ar.alafasy",
+      "name": "مشاري العفاسي",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 22
+    },
+    {
+      "id": "ar.abdulbasitmurattal",
+      "name": "عبد الباسط عبد الصمد المرتل",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 15
+    },
+    {
+      "id": "ar.abdullahbasfar",
+      "name": "عبد الله بصفر",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 14
+    },
+    {
+      "id": "ar.abdulbariaththubaity",
+      "name": "عبدالباري الثبيتي",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 9
+    },
+    {
+      "id": "ar.salahalbudair",
+      "name": "صلح البدير",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 8
+    },
+    {
+      "id": "ar.abdulmuhsinalqasim",
+      "name": "عبد المحسن القاسم",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 7
+    },
+    {
+      "id": "ar.muhammadalluhaidan",
+      "name": "محمد اللحيدان",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 6
+    },
+    {
+      "id": "ar.nabilarrifai",
+      "name": "نبيل الرفاعي",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 4
+    },
+    {
+      "id": "ar.hamadsinan",
+      "name": "حامد سنان",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.sahlyasin",
+      "name": "سهل ياسين",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.sadaqatali",
+      "name": "صدقات علي",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.abdullahkhayat",
+      "name": "عبدالله خياط",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.abdullahawadaljuhani",
+      "name": "عبدالله عواد الجهني",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.azizalili",
+      "name": "عزيز عليلى",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.imadzuhairhafez",
+      "name": "عماد زهير حافظ",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.faresabbad",
+      "name": "فارس عباد",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.muhammadalmehysni",
+      "name": "محمد المحيسني",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    },
+    {
+      "id": "ar.muhammadabdulkareem",
+      "name": "محمد عبدالكريم",
+      "rewaya": "حفص",
+      "head": 200,
+      "fame": 0
+    }
+  ],
+  "warsh": null
+}

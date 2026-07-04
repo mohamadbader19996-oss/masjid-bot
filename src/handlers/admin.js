@@ -1,10 +1,12 @@
 const db = require('../database');
 const { ROLES, ROLE_LABELS } = require('../keyboards');
 const { Markup } = require('telegraf');
+const { loadDB } = require('../utils/db');
+const { resolveMosqueId } = require('./recitationVolunteers');
 
-const PRAYER_ICONS = ['🌙', '☀️', '🌤️', '🌇', '🌑'];
-const PRAYER_NAMES = ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
-const PRAYER_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+const PRAYER_ICONS = ['🌙', '🌅', '☀️', '🌤️', '🌇', '🌃'];
+const PRAYER_NAMES = ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
+const PRAYER_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
 async function adminPanel(ctx) {
   if (ctx.callbackQuery) await ctx.answerCbQuery();
@@ -12,8 +14,9 @@ async function adminPanel(ctx) {
     return ctx.reply('⛔ ليس لديك صلاحية.');
   }
   const keyboard = Markup.inlineKeyboard([
+    [Markup.button.callback('🕌 لوحة مدير المسجد', 'mosque_admin_panel')],
     [Markup.button.callback('👨‍🏫 إدارة المشايخ', 'admin_sheikhs'), Markup.button.callback('💰 إدارة التبرعات', 'admin_donations')],
-    [Markup.button.callback('🆘 طلبات المساعدة', 'admin_help_requests'), Markup.button.callback('📊 الإحصائيات', 'admin_stats')],
+    [Markup.button.callback('📊 الإحصائيات', 'admin_stats')],
     [Markup.button.callback('🏛️ معلومات المسجد', 'admin_mosque_info'), Markup.button.callback('👥 إدارة المستخدمين', 'admin_users')]
   ]);
   const text = '🔐 *لوحة تحكم المسجد*\n\nاختر الخيار المطلوب:';
@@ -59,8 +62,9 @@ async function sheikhs_delete(ctx, sheikhId) {
 async function manageDonations(ctx) {
   if (ctx.callbackQuery) await ctx.answerCbQuery();
   if (![ROLES.ADMIN, ROLES.DEVELOPER].includes(ctx.user?.role)) return ctx.reply('⛔ ليس لديك صلاحية.');
-  const mosque = db.firstMosque();
-  if (!mosque) return ctx.reply('🕌 لم يتم إضافة مسجد بعد.');
+  const mosqueId = resolveMosqueId(ctx.from.id, loadDB());
+  const mosque = mosqueId ? db.getMosque(mosqueId) : null;
+  if (!mosque) return ctx.reply('⚠️ لم يتم ربطك بمسجد');
   const iban = db.getDonationIBAN(mosque.id);
   const paypal = db.getDonationPayPal(mosque.id);
   let msg = `💰 *إدارة التبرعات*\n\n🏛️ المسجد: ${mosque.name}\n\n`;
@@ -92,6 +96,7 @@ async function donation_set_paypal(ctx) {
 async function manageHelpRequests(ctx) {
   if (ctx.callbackQuery) await ctx.answerCbQuery();
   if (![ROLES.ADMIN, ROLES.DEVELOPER].includes(ctx.user?.role)) return ctx.reply('⛔ ليس لديك صلاحية.');
+  if (!db.getPendingHelpRequests) return [];
   const requests = db.getPendingHelpRequests();
   const buttons = [];
   let msg;
@@ -120,9 +125,12 @@ async function help_resolve(ctx, requestId) {
 async function showMosqueStats(ctx) {
   if (ctx.callbackQuery) await ctx.answerCbQuery();
   if (![ROLES.ADMIN, ROLES.DEVELOPER].includes(ctx.user?.role)) return ctx.reply('⛔ ليس لديك صلاحية.');
-  const mosque = db.firstMosque();
+  const mosqueId = resolveMosqueId(ctx.from.id, loadDB());
+  const mosque = mosqueId ? db.getMosque(mosqueId) : null;
+  if (!mosque) return ctx.reply('⚠️ لم يتم ربطك بمسجد');
   const users = db.allUsers();
   const sheikhs = db.allSheikhs();
+  if (!db.allHelpRequests) return [];
   const helpRequests = db.allHelpRequests();
   const questions = db.allQuestions();
   const lessons = db.getLessons(100);
@@ -146,8 +154,9 @@ async function showMosqueStats(ctx) {
 async function manageMosque(ctx) {
   if (ctx.callbackQuery) await ctx.answerCbQuery();
   if (![ROLES.ADMIN, ROLES.DEVELOPER].includes(ctx.user?.role)) return ctx.reply('⛔ ليس لديك صلاحية.');
-  const mosque = db.firstMosque();
-  if (!mosque) return ctx.reply('🕌 لم يتم إضافة مسجد بعد.');
+  const mosqueId = resolveMosqueId(ctx.from.id, loadDB());
+  const mosque = mosqueId ? db.getMosque(mosqueId) : null;
+  if (!mosque) return ctx.reply('⚠️ لم يتم ربطك بمسجد');
   const t = mosque.prayerTimes || {};
   const prayerLines = PRAYER_KEYS.map((key, i) => `${PRAYER_ICONS[i]} ${PRAYER_NAMES[i]}: ${t[key] || '—'}`).join('\n');
   const msg = `🏛️ *معلومات المسجد*\n\n📛 *الاسم:* ${mosque.name}\n📍 *الموقع:* ${mosque.location || 'غير محدد'}\n\n📅 *مواقيت الصلاة:*\n${prayerLines}`;

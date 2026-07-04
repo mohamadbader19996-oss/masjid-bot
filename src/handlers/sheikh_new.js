@@ -1,6 +1,7 @@
 const { Markup } = require('telegraf');
 const db = require('../database');
 const { ROLES } = require('../keyboards');
+const { resolveManagedMosque } = require('../services/inviteService');
 
 // ── لوحة الشيخ الرئيسية ──────────────────────────
 
@@ -9,7 +10,7 @@ async function sheikhPanel(ctx) {
     return ctx.reply('⛔ ليس لديك صلاحية للوصول إلى هذا القسم.');
   }
 
-  const keyboard = Markup.inlineKeyboard([
+  const rows = [
     [
       Markup.button.callback('📬 الرسائل', 'sheikh_messages'),
       Markup.button.callback('❓ الأسئلة الفقهية', 'sheikh_secret_questions')
@@ -22,8 +23,19 @@ async function sheikhPanel(ctx) {
       Markup.button.callback('📚 رفع خطبة/درس', 'sheikh_upload_sermon'),
       Markup.button.callback('🕌 المصحف الشريف', 'sheikh_quran')
     ],
-    [Markup.button.callback('📊 إحصائياتي', 'sheikh_stats')]
-  ]);
+    [Markup.button.callback('📊 إحصائياتي', 'sheikh_stats')],
+    [Markup.button.callback('🎙️ تسميع مع شيخ', 'rec_sheikh_menu')],
+    [Markup.button.callback('🎥 إدارة فيديوهات التعليم', 'admin_videos_menu')]
+  ];
+
+  if (resolveManagedMosque(ctx.from.id)) {
+    rows.push([
+      Markup.button.callback('👥 المصلّون', 'sheikh_worshippers'),
+      Markup.button.callback('📨 دعوة', 'sheikh_staff_invite')
+    ]);
+  }
+
+  const keyboard = Markup.inlineKeyboard(rows);
 
   await ctx.reply(
     '📖 *لوحة الشيخ الكاملة*\n\n✨ مرحباً بك! اختر الخيار المطلوب:',
@@ -496,6 +508,6 @@ registry.registerAction(/^circle_waitlist_(.+)$/, (ctx) => handleCircleFeatureSt
 registry.registerAction(/^circle_edit_(.+)$/, (ctx) => handleCircleFeatureStub(ctx, 'تحديث الحلقة'), 'تحديث حلقة');
 registry.registerAction('quran_languages', showLanguages, 'لغات المصحف');
 registry.registerAction('quran_surahs', showSurahs, 'سور المصحف');
-registry.registerAction(/^quran_lang_(.+)$/, handleQuranLangSelect, 'اختيار لغة المصحف');
+registry.registerAction(/^quran_lang_([a-z]{2,3})$/, handleQuranLangSelect, 'اختيار لغة المصحف');
 registry.registerAction(/^quran_surah_(.+)$/, handleQuranSurahSelect, 'قراءة سورة من لوحة الشيخ');
 registry.registerAction(/^answer_(.+)$/, handleAnswerQuestion, 'الإجابة على سؤال');

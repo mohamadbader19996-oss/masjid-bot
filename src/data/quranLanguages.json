@@ -1,0 +1,386 @@
+[
+  {
+    "code": "ar",
+    "flag": "🇸🇦",
+    "label": "العربية",
+    "edition": "quran-uthmani",
+    "translator": "القرآن الكريم",
+    "name": "🇸🇦 العربية"
+  },
+  {
+    "code": "am",
+    "flag": "🇪🇹",
+    "label": "አማርኛ",
+    "edition": "am.sadiq",
+    "translator": "ሳዲቅ & ሳኒ ሐቢብ",
+    "name": "🇪🇹 አማርኛ"
+  },
+  {
+    "code": "az",
+    "flag": "🇦🇿",
+    "label": "Azərbaycan",
+    "edition": "az.mammadaliyev",
+    "translator": "Məmmədəliyev & Bünyadov",
+    "name": "🇦🇿 Azərbaycan"
+  },
+  {
+    "code": "ba",
+    "flag": "🇷🇺",
+    "label": "Башҡорт",
+    "edition": "ba.mehanovic",
+    "translator": "Kur'an - sa prevodom (značenja) na bosanski jezik, utemeljen na Ibn Kesirovom tumačenju, i kratki komentar",
+    "name": "🇷🇺 Башҡорт"
+  },
+  {
+    "code": "ber",
+    "flag": "🌐",
+    "label": "BER",
+    "edition": "ber.mensur",
+    "translator": "At Mensur",
+    "name": "🌐 BER"
+  },
+  {
+    "code": "bg",
+    "flag": "🇧🇬",
+    "label": "Български",
+    "edition": "bg.theophanov",
+    "translator": "Теофанов",
+    "name": "🇧🇬 Български"
+  },
+  {
+    "code": "bn",
+    "flag": "🇧🇩",
+    "label": "বাংলা",
+    "edition": "bn.bengali",
+    "translator": "মুহিউদ্দীন খান",
+    "name": "🇧🇩 বাংলা"
+  },
+  {
+    "code": "bs",
+    "flag": "🇧🇦",
+    "label": "Bosanski",
+    "edition": "bs.korkut",
+    "translator": "Korkut",
+    "name": "🇧🇦 Bosanski"
+  },
+  {
+    "code": "ce",
+    "flag": "🇷🇺",
+    "label": "Нохчийн",
+    "edition": "ce.magomedov",
+    "translator": "Chechen by Magomedov",
+    "name": "🇷🇺 Нохчийн"
+  },
+  {
+    "code": "cs",
+    "flag": "🇨🇿",
+    "label": "Čeština",
+    "edition": "cs.hrbek",
+    "translator": "Hrbek",
+    "name": "🇨🇿 Čeština"
+  },
+  {
+    "code": "de",
+    "flag": "🇩🇪",
+    "label": "Deutsch",
+    "edition": "de.bubenheim",
+    "translator": "Bubenheim & Elyas",
+    "name": "🇩🇪 Deutsch"
+  },
+  {
+    "code": "dv",
+    "flag": "🌐",
+    "label": "DV",
+    "edition": "dv.divehi",
+    "translator": "ދިވެހި",
+    "name": "🌐 DV"
+  },
+  {
+    "code": "en",
+    "flag": "🇬🇧",
+    "label": "English",
+    "edition": "en.sahih",
+    "translator": "Saheeh International",
+    "name": "🇬🇧 English"
+  },
+  {
+    "code": "es",
+    "flag": "🇪🇸",
+    "label": "Español",
+    "edition": "es.cortes",
+    "translator": "Cortes",
+    "name": "🇪🇸 Español"
+  },
+  {
+    "code": "fa",
+    "flag": "🇮🇷",
+    "label": "فارسی",
+    "edition": "fa.ayati",
+    "translator": "آیتی",
+    "name": "🇮🇷 فارسی"
+  },
+  {
+    "code": "fr",
+    "flag": "🇫🇷",
+    "label": "Français",
+    "edition": "fr.hamidullah",
+    "translator": "Hamidullah",
+    "name": "🇫🇷 Français"
+  },
+  {
+    "code": "ha",
+    "flag": "🇳🇬",
+    "label": "Hausa",
+    "edition": "ha.gumi",
+    "translator": "Gumi",
+    "name": "🇳🇬 Hausa"
+  },
+  {
+    "code": "hi",
+    "flag": "🇮🇳",
+    "label": "हिन्दी",
+    "edition": "hi.hindi",
+    "translator": "फ़ारूक़ ख़ान & नदवी",
+    "name": "🇮🇳 हिन्दी"
+  },
+  {
+    "code": "id",
+    "flag": "🇮🇩",
+    "label": "Indonesia",
+    "edition": "id.indonesian",
+    "translator": "Bahasa Indonesia",
+    "name": "🇮🇩 Indonesia"
+  },
+  {
+    "code": "it",
+    "flag": "🇮🇹",
+    "label": "Italiano",
+    "edition": "it.piccardo",
+    "translator": "Piccardo",
+    "name": "🇮🇹 Italiano"
+  },
+  {
+    "code": "ja",
+    "flag": "🇯🇵",
+    "label": "日本語",
+    "edition": "ja.japanese",
+    "translator": "Japanese",
+    "name": "🇯🇵 日本語"
+  },
+  {
+    "code": "ko",
+    "flag": "🇰🇷",
+    "label": "한국어",
+    "edition": "ko.korean",
+    "translator": "Korean",
+    "name": "🇰🇷 한국어"
+  },
+  {
+    "code": "ku",
+    "flag": "🏳️",
+    "label": "Kurdî",
+    "edition": "ku.asan",
+    "translator": "ته‌فسیری ئاسان",
+    "name": "🏳️ Kurdî"
+  },
+  {
+    "code": "ml",
+    "flag": "🇮🇳",
+    "label": "മലയാളം",
+    "edition": "ml.abdulhameed",
+    "translator": "അബ്ദുല്‍ ഹമീദ് & പറപ്പൂര്‍",
+    "name": "🇮🇳 മലയാളം"
+  },
+  {
+    "code": "ms",
+    "flag": "🇲🇾",
+    "label": "Melayu",
+    "edition": "ms.basmeih",
+    "translator": "Basmeih",
+    "name": "🇲🇾 Melayu"
+  },
+  {
+    "code": "my",
+    "flag": "🇲🇲",
+    "label": "မြန်မာ",
+    "edition": "my.ghazi",
+    "translator": "Ghazi Muhammed Hashim",
+    "name": "🇲🇲 မြန်မာ"
+  },
+  {
+    "code": "nl",
+    "flag": "🇳🇱",
+    "label": "Nederlands",
+    "edition": "nl.keyzer",
+    "translator": "Keyzer",
+    "name": "🇳🇱 Nederlands"
+  },
+  {
+    "code": "no",
+    "flag": "🇳🇴",
+    "label": "Norsk",
+    "edition": "no.berg",
+    "translator": "Einar Berg",
+    "name": "🇳🇴 Norsk"
+  },
+  {
+    "code": "pl",
+    "flag": "🇵🇱",
+    "label": "Polski",
+    "edition": "pl.bielawskiego",
+    "translator": "Bielawskiego",
+    "name": "🇵🇱 Polski"
+  },
+  {
+    "code": "ps",
+    "flag": "🇦🇫",
+    "label": "پښتو",
+    "edition": "ps.abdulwali",
+    "translator": "عبدالولي",
+    "name": "🇦🇫 پښتو"
+  },
+  {
+    "code": "pt",
+    "flag": "🇵🇹",
+    "label": "Português",
+    "edition": "pt.elhayek",
+    "translator": "El-Hayek",
+    "name": "🇵🇹 Português"
+  },
+  {
+    "code": "ro",
+    "flag": "🇷🇴",
+    "label": "Română",
+    "edition": "ro.grigore",
+    "translator": "Grigore",
+    "name": "🇷🇴 Română"
+  },
+  {
+    "code": "ru",
+    "flag": "🇷🇺",
+    "label": "Русский",
+    "edition": "ru.kuliev",
+    "translator": "Кулиев",
+    "name": "🇷🇺 Русский"
+  },
+  {
+    "code": "sd",
+    "flag": "🇵🇰",
+    "label": "سنڌي",
+    "edition": "sd.amroti",
+    "translator": "امروٽي",
+    "name": "🇵🇰 سنڌي"
+  },
+  {
+    "code": "si",
+    "flag": "🇱🇰",
+    "label": "සිංහල",
+    "edition": "si.naseemismail",
+    "translator": "Naseem Ismail",
+    "name": "🇱🇰 සිංහල"
+  },
+  {
+    "code": "so",
+    "flag": "🇸🇴",
+    "label": "Soomaali",
+    "edition": "so.abduh",
+    "translator": "Abduh",
+    "name": "🇸🇴 Soomaali"
+  },
+  {
+    "code": "sq",
+    "flag": "🇦🇱",
+    "label": "Shqip",
+    "edition": "sq.nahi",
+    "translator": "Efendi Nahi",
+    "name": "🇦🇱 Shqip"
+  },
+  {
+    "code": "sv",
+    "flag": "🇸🇪",
+    "label": "Svenska",
+    "edition": "sv.bernstrom",
+    "translator": "Bernström",
+    "name": "🇸🇪 Svenska"
+  },
+  {
+    "code": "sw",
+    "flag": "🇰🇪",
+    "label": "Kiswahili",
+    "edition": "sw.barwani",
+    "translator": "Al-Barwani",
+    "name": "🇰🇪 Kiswahili"
+  },
+  {
+    "code": "ta",
+    "flag": "🇮🇳",
+    "label": "தமிழ்",
+    "edition": "ta.tamil",
+    "translator": "ஜான் டிரஸ்ட்",
+    "name": "🇮🇳 தமிழ்"
+  },
+  {
+    "code": "tg",
+    "flag": "🇹🇯",
+    "label": "Тоҷикӣ",
+    "edition": "tg.ayati",
+    "translator": "Оятӣ",
+    "name": "🇹🇯 Тоҷикӣ"
+  },
+  {
+    "code": "th",
+    "flag": "🇹🇭",
+    "label": "ไทย",
+    "edition": "th.thai",
+    "translator": "ภาษาไทย",
+    "name": "🇹🇭 ไทย"
+  },
+  {
+    "code": "tr",
+    "flag": "🇹🇷",
+    "label": "Türkçe",
+    "edition": "tr.diyanet",
+    "translator": "Diyanet İşleri",
+    "name": "🇹🇷 Türkçe"
+  },
+  {
+    "code": "tt",
+    "flag": "🇷🇺",
+    "label": "Татар",
+    "edition": "tt.nugman",
+    "translator": "Yakub Ibn Nugman",
+    "name": "🇷🇺 Татар"
+  },
+  {
+    "code": "ug",
+    "flag": "🇨🇳",
+    "label": "ئۇيغۇرچە",
+    "edition": "ug.saleh",
+    "translator": "محمد صالح",
+    "name": "🇨🇳 ئۇيغۇرچە"
+  },
+  {
+    "code": "ur",
+    "flag": "🇵🇰",
+    "label": "اردو",
+    "edition": "ur.jalandhry",
+    "translator": "جالندہری",
+    "name": "🇵🇰 اردو"
+  },
+  {
+    "code": "uz",
+    "flag": "🇺🇿",
+    "label": "Oʻzbek",
+    "edition": "uz.sodik",
+    "translator": "Мухаммад Содик",
+    "name": "🇺🇿 Oʻzbek"
+  },
+  {
+    "code": "zh",
+    "flag": "🇨🇳",
+    "label": "中文",
+    "edition": "zh.majian",
+    "translator": "Ma Jian (Traditional)",
+    "name": "🇨🇳 中文"
+  }
+]
